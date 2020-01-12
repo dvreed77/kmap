@@ -1,104 +1,93 @@
-import { SQRT_3 } from "./utils";
+import { SQRT_3, GridGenerator, isOdd } from "./utils";
 
 class KGrid {
   constructor(width, height) {
     this.width = width;
     this.height = height;
-    this.N_HEX_COLS = 9;
-    this.HEX_W = width / this.N_HEX_COLS;
+
+    this.setup2();
+  }
+
+  setup1() {
+    this.N_HEX_COLS = 7;
+    this.HEX_W = this.width / this.N_HEX_COLS;
     this.F = this.HEX_W / (2 * SQRT_3);
     this.H = this.HEX_W / SQRT_3;
     this.G = this.HEX_W / 2;
-    this.N_HEX_ROWS = Math.ceil(height / (this.F + this.H));
+    this.N_HEX_ROWS = Math.ceil(this.height / (this.F + this.H));
 
     this.createGrid();
     this.createLines();
   }
 
-  createGrid() {
-    const pts = [];
-    for (
-      let i = -(this.N_HEX_COLS - 1) / 2;
-      i < (this.N_HEX_COLS - 1) / 2;
-      i++
-    ) {
-      for (
-        let j = -(this.N_HEX_ROWS - 1) / 2;
-        j < (this.N_HEX_ROWS - 1) / 2;
-        j++
-      ) {
-        for (let d = 0; d < 6; d++) {
-          let x0, ant, bat;
-          if (j % 2) {
-            x0 = i * this.HEX_W + this.HEX_W / 2 + this.width / 2;
-            ant = (j + 1) / 2 + i;
-            bat = (1 - j) / 2 + i;
-          } else {
-            x0 = i * this.HEX_W + this.width / 2;
-            ant = j / 2 + i;
-            bat = i - j / 2;
-          }
+  setup2() {
+    this.F = 32;
+    this.H = 2 * this.F;
+    this.G = SQRT_3 * this.F;
 
-          const cat = j;
-          const dog = d;
-
-          const y0 = j * (this.F + this.H) + this.height / 2;
-
-          let dx, dy;
-          if (d === 0) {
-            dx = 0;
-            dy = 0;
-          } else {
-            const angle = ((-30 * d + 150) * Math.PI) / 180;
-            if (d % 2) {
-              dx = this.G * Math.cos(angle);
-              dy = -this.G * Math.sin(angle);
-            } else {
-              dx = this.H * Math.cos(angle);
-              dy = -this.H * Math.sin(angle);
-            }
-          }
-
-          const xD = x0 + dx;
-          const yD = y0 + dy;
-
-          pts.push({
-            i,
-            j,
-            x: xD,
-            y: yD,
-            ant,
-            bat,
-            cat,
-            dog
-          });
-        }
-      }
-    }
-
-    this.grid = pts;
+    this.HEX_W = 2 * this.G;
+    this.N_HEX_COLS = Math.ceil(this.width / this.HEX_W);
+    this.N_HEX_ROWS = Math.ceil(this.height / (this.F + this.H));
   }
 
-  createLines() {
+  genGrid(density = 1) {
+    const pts = [];
     const lines = [];
-    for (
-      let i = -(this.N_HEX_COLS - 1) / 2;
-      i < (this.N_HEX_COLS - 1) / 2;
-      i++
-    ) {
-      for (
-        let j = -(this.N_HEX_ROWS - 1) / 2;
-        j < (this.N_HEX_ROWS - 1) / 2;
-        j++
-      ) {
-        let x0;
-        if (j % 2) {
-          x0 = i * this.HEX_W + this.HEX_W / 2 + this.width / 2;
-        } else {
-          x0 = i * this.HEX_W + this.width / 2;
-        }
+
+    this.F = 32 / density;
+    this.H = 2 * this.F;
+    this.G = SQRT_3 * this.F;
+
+    this.HEX_W = 2 * this.G;
+    this.N_HEX_COLS = Math.ceil(this.width / this.HEX_W);
+    this.N_HEX_ROWS = Math.ceil(this.height / (this.F + this.H));
+
+    for (const [i, j] of GridGenerator(this.N_HEX_COLS, this.N_HEX_ROWS)) {
+      let x0, ant, bat;
+      if (isOdd(j)) {
+        x0 = i * this.HEX_W + this.HEX_W / 2 + this.width / 2;
+        ant = (j + 1) / 2 + i;
+        bat = (1 - j) / 2 + i;
+      } else {
+        x0 = i * this.HEX_W + this.width / 2;
+        ant = j / 2 + i;
+        bat = i - j / 2;
+      }
+
+      for (let d = 0; d < 6; d++) {
+        const cat = j;
+        const dog = d;
 
         const y0 = j * (this.F + this.H) + this.height / 2;
+
+        let dx, dy;
+        if (d === 0) {
+          dx = 0;
+          dy = 0;
+        } else {
+          const angle = ((-30 * d + 150) * Math.PI) / 180;
+          if (isOdd(d)) {
+            dx = this.G * Math.cos(angle);
+            dy = -this.G * Math.sin(angle);
+          } else {
+            dx = this.H * Math.cos(angle);
+            dy = -this.H * Math.sin(angle);
+          }
+        }
+
+        const xD = x0 + dx;
+        const yD = y0 + dy;
+
+        pts.push({
+          i,
+          j,
+          x: xD,
+          y: yD,
+          ant,
+          bat,
+          cat,
+          dog
+        });
 
         // Gen Spokes
         for (let d = 0; d < 12; d++) {
@@ -148,7 +137,10 @@ class KGrid {
       }
     }
 
-    this.gridLines = lines;
+    return {
+      pts,
+      lines
+    };
   }
 
   convertHexPointToCanvasPoint(kP) {
@@ -162,7 +154,6 @@ class KGrid {
       x0 = i0 * this.HEX_W + this.width / 2;
     }
 
-    // const x0 = i0 * this.HEX_W + this.width / 2;
     const y0 = (j0 * 3 * this.HEX_W) / (2 * SQRT_3) + this.height / 2;
 
     let dx, dy;

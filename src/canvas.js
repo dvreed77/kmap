@@ -4,7 +4,7 @@ import { colors } from "./colors";
 import * as R from "ramda";
 import KGrid from "./kcanvas";
 
-const Canvas = ({ mouseOver }) => {
+const Canvas = ({ gridDensity, mouseOver }) => {
   const cRef = useRef();
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(500);
@@ -20,9 +20,9 @@ const Canvas = ({ mouseOver }) => {
     setKGrid(kgrid);
 
     const shape = [
-      { ant: 0, bat: 0, cat: 0, dog: 0 },
-      { ant: -1, bat: -1, cat: 0, dog: 0 },
-      { ant: -1, bat: 0, cat: -1, dog: 0 }
+      { ant: 3, bat: 1, cat: 2, dog: 0 },
+      { ant: -1, bat: -3, cat: 2, dog: 0 },
+      { ant: -1, bat: 1, cat: -2, dog: 0 }
     ];
 
     const pts = [];
@@ -30,16 +30,18 @@ const Canvas = ({ mouseOver }) => {
       pts.push(kgrid.convertHexPointToCanvasPoint(kPt));
     }
     setShape(pts);
-
-    setPoints(kgrid.grid);
   }, []);
 
-  const setActive = idx => {
-    mouseOver(points[idx]);
+  const setActive = (pt, idx) => {
+    mouseOver(pt);
     setActiveIdx(idx);
   };
 
-  const polygons = Object.entries(R.groupBy(d => `${d.i}.${d.j}`)(points)).map(
+  if (!kgrid) return <div></div>;
+
+  const { pts, lines } = kgrid.genGrid(gridDensity);
+
+  const polygons = Object.entries(R.groupBy(d => `${d.i}.${d.j}`)(pts)).map(
     ([k, v]) => {
       var path = d3.path();
       path.moveTo(v[0].x, v[0].y);
@@ -66,21 +68,20 @@ const Canvas = ({ mouseOver }) => {
   return (
     <div>
       <svg ref={cRef} width={width} height={height}>
-        {kgrid &&
-          kgrid.gridLines.map((line, idx) => (
-            <line
-              key={idx}
-              x1={line[0][0]}
-              y1={line[0][1]}
-              x2={line[1][0]}
-              y2={line[1][1]}
-              stroke={"#eee"}
-            />
-          ))}
+        {lines.map((line, idx) => (
+          <line
+            key={idx}
+            x1={line[0][0]}
+            y1={line[0][1]}
+            x2={line[1][0]}
+            y2={line[1][1]}
+            stroke={"#eee"}
+          />
+        ))}
         {polygons.map((path, idx) => (
           <path key={idx} d={path} fill={"#eee"} fillOpacity={0.5} />
         ))}
-        {points.map((pt, idx) => (
+        {pts.map((pt, idx) => (
           <circle
             key={idx}
             cx={pt.x}
@@ -90,7 +91,7 @@ const Canvas = ({ mouseOver }) => {
           />
         ))}
         <path d={shapePath} fill={"green"} fillOpacity={0.4} />
-        {points.map((pt, idx) => (
+        {pts.map((pt, idx) => (
           <circle
             key={idx}
             cx={pt.x}
@@ -98,7 +99,7 @@ const Canvas = ({ mouseOver }) => {
             r={6}
             fill={"black"}
             fillOpacity="0"
-            onMouseOver={() => setActive(idx)}
+            onMouseOver={() => setActive(pt, idx)}
             onMouseLeave={() => setActive(null)}
           />
         ))}
