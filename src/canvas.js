@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { colors } from "./colors";
 import * as R from "ramda";
-import KGrid from "./kcanvas";
+import KGrid, { KPolygon } from "./kcanvas";
 
 const Canvas = ({ gridDensity, mouseOver }) => {
   const cRef = useRef();
@@ -14,20 +14,108 @@ const Canvas = ({ gridDensity, mouseOver }) => {
   const [shape, setShape] = useState([]);
   const [activeIdx, setActiveIdx] = useState(null);
 
+  // See Page 58 in Notes
+  const shapes = [
+    {
+      pts: [
+        [1, 0, 1, 0],
+        [0, -1, 1, 0],
+        [-1, -1, 0, 0],
+        [-1, 0, -1, 0],
+        [0, 1, -1, 0],
+        [1, 1, 0, 0]
+      ],
+      color: "red"
+    },
+    {
+      pts: [
+        [-2, 2, -4, 0],
+        [-2, 0, -2, 0],
+        [0, 2, -2, 0]
+      ],
+      color: "green"
+    },
+    {
+      pts: [
+        [-2, -2, 0, 0],
+        [-2, -4, 2, 0],
+        [0, -2, 2, 0]
+      ],
+      color: "green"
+    },
+    {
+      pts: [
+        [2, 2, 0, 0],
+        [2, 0, 2, 0],
+        [4, 2, 2, 0]
+      ],
+      color: "green"
+    },
+    {
+      pts: [
+        [-1, 1, -2, 0],
+        [-2, 0, -2, 0],
+        [-2, -1, -1, 0],
+        [-1, -1, 0, 3],
+        [-1, 0, -1, 0],
+        [-1, 0, -1, 5]
+      ],
+      color: "orange"
+    },
+    {
+      pts: [
+        [1, 2, -1, 0],
+        [0, 2, -2, 0],
+        [-1, 1, -2, 0],
+        [-1, 0, -1, 5],
+        [0, 1, -1, 0],
+        [1, 1, 0, 1]
+      ],
+      color: "orange"
+    }
+  ].map(shape => ({
+    color: shape.color,
+    polygon: new KPolygon(shape.pts)
+  }));
+
   useEffect(() => {
     const kgrid = new KGrid(width, height);
 
     setKGrid(kgrid);
 
+    console.log(shapes[4]);
+    const pt1 = shapes[4].polygon.pts[0];
+
+    console.log(pt1);
+
+    kgrid.rotateKPoint(
+      {
+        ant: pt1[0],
+        bat: pt1[1],
+        cat: pt1[2],
+        dog: pt1[3]
+      },
+      -Math.PI / 4
+    );
     const shape = [
-      { ant: 3, bat: 1, cat: 2, dog: 0 },
-      { ant: -1, bat: -3, cat: 2, dog: 0 },
-      { ant: -1, bat: 1, cat: -2, dog: 0 }
+      [1, 0, 1, 0],
+      [0, -1, 1, 0],
+      [-1, -1, 0, 0],
+      [-1, 0, -1, 0],
+      [0, 1, -1, 0],
+      [1, 1, 0, 0]
     ];
 
     const pts = [];
     for (let kPt of shape) {
-      pts.push(kgrid.convertHexPointToCanvasPoint(kPt));
+      pts.push(
+        kgrid.convertHexPointToCanvasPoint({
+          ant: kPt[0],
+          bat: kPt[1],
+          cat: kPt[2],
+          dog: kPt[3]
+        })
+      );
     }
     setShape(pts);
   }, []);
@@ -90,7 +178,17 @@ const Canvas = ({ gridDensity, mouseOver }) => {
             fill={idx === activeIdx ? colors.highlight : "#ddd"}
           />
         ))}
-        <path d={shapePath} fill={"green"} fillOpacity={0.4} />
+
+        {shapes.map(({ polygon, color }, idx) => (
+          <path
+            key={idx}
+            d={polygon.draw(kgrid)}
+            fill={color}
+            fillOpacity={0.4}
+            stroke={"black"}
+            strokeWidth={3}
+          />
+        ))}
         {pts.map((pt, idx) => (
           <circle
             key={idx}

@@ -1,4 +1,5 @@
 import { SQRT_3, GridGenerator, isOdd } from "./utils";
+import * as d3 from "d3";
 
 class KGrid {
   constructor(width, height) {
@@ -21,7 +22,7 @@ class KGrid {
   }
 
   setup2() {
-    this.F = 32;
+    this.F = 20;
     this.H = 2 * this.F;
     this.G = SQRT_3 * this.F;
 
@@ -34,13 +35,13 @@ class KGrid {
     const pts = [];
     const lines = [];
 
-    this.F = 32 / density;
-    this.H = 2 * this.F;
-    this.G = SQRT_3 * this.F;
+    // this.F = 20 / density;
+    // this.H = 2 * this.F;
+    // this.G = SQRT_3 * this.F;
 
-    this.HEX_W = 2 * this.G;
-    this.N_HEX_COLS = Math.ceil(this.width / this.HEX_W);
-    this.N_HEX_ROWS = Math.ceil(this.height / (this.F + this.H));
+    // this.HEX_W = 2 * this.G;
+    // this.N_HEX_COLS = Math.ceil(this.width / this.HEX_W);
+    // this.N_HEX_ROWS = Math.ceil(this.height / (this.F + this.H));
 
     for (const [i, j] of GridGenerator(this.N_HEX_COLS, this.N_HEX_ROWS)) {
       let x0, ant, bat;
@@ -173,6 +174,21 @@ class KGrid {
 
     return [x0 + dx, y0 + dy];
   }
+
+  rotateKPoint(kPoint, rotationAngle = 0) {
+    const cP = this.convertHexPointToCanvasPoint(kPoint);
+    const xP = cP[0] - this.width / 2;
+    const yP = cP[1] - this.height / 2;
+
+    const r = Math.sqrt(Math.pow(xP, 2) + Math.pow(yP, 2));
+    const angle = Math.atan2(yP, xP);
+    const newAngle = angle + rotationAngle;
+
+    const newX = r * Math.cos(newAngle);
+    const newY = r * Math.sin(newAngle);
+
+    console.log("ROTATE", xP, yP, newX, newY);
+  }
 }
 
 class KPoint {
@@ -184,8 +200,32 @@ class KPoint {
   }
 }
 
-class KPolygon {
-  constructor(pts) {}
+export class KPolygon {
+  constructor(pts) {
+    this.pts = pts;
+  }
+
+  draw(grid) {
+    var path = d3.path();
+
+    const pts = this.pts.map(pt =>
+      grid.convertHexPointToCanvasPoint({
+        ant: pt[0],
+        bat: pt[1],
+        cat: pt[2],
+        dog: pt[3]
+      })
+    );
+    if (pts.length) {
+      path.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 0; i < pts.length; i++) {
+        path.lineTo(pts[i][0], pts[i][1]);
+      }
+      path.closePath();
+    }
+
+    return path.toString();
+  }
 }
 
 export default KGrid;

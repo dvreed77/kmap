@@ -13,7 +13,7 @@ export function* GridGenerator(nCols, nRows) {
   }
 
   let rStart, rEnd;
-  if (isOdd(nCols)) {
+  if (isOdd(nRows)) {
     rStart = -(nRows - 1) / 2;
     rEnd = (nRows - 1) / 2 + 1;
   } else {
