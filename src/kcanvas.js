@@ -1,8 +1,19 @@
 import { SQRT_3, GridGenerator, isOdd } from "./utils";
 import * as d3 from "d3";
-
 class KGrid {
-  constructor(width, height) {
+  constructor() {
+    this.pts = [];
+    this.lines = [];
+
+    const qTree = d3
+      .quadtree()
+      .x(d => d.x)
+      .y(d => d.y);
+
+    this.qTree = qTree;
+  }
+
+  intitialize(width, height) {
     this.width = width;
     this.height = height;
 
@@ -29,21 +40,15 @@ class KGrid {
     this.HEX_W = 2 * this.G;
     this.N_HEX_COLS = Math.ceil(this.width / this.HEX_W);
     this.N_HEX_ROWS = Math.ceil(this.height / (this.F + this.H));
+
+    this.genGrid();
   }
 
-  genGrid(density = 1) {
+  genGrid() {
     const pts = [];
     const lines = [];
 
-    // this.F = 20 / density;
-    // this.H = 2 * this.F;
-    // this.G = SQRT_3 * this.F;
-
-    // this.HEX_W = 2 * this.G;
-    // this.N_HEX_COLS = Math.ceil(this.width / this.HEX_W);
-    // this.N_HEX_ROWS = Math.ceil(this.height / (this.F + this.H));
-
-    for (const [i, j] of GridGenerator(this.N_HEX_COLS, this.N_HEX_ROWS)) {
+    for (const [idx, i, j] of GridGenerator(this.N_HEX_COLS, this.N_HEX_ROWS)) {
       let x0, ant, bat;
       if (isOdd(j)) {
         x0 = i * this.HEX_W + this.HEX_W / 2 + this.width / 2;
@@ -80,6 +85,7 @@ class KGrid {
         const yD = y0 + dy;
 
         pts.push({
+          idx: `${idx}.${d}`,
           i,
           j,
           x: xD,
@@ -138,9 +144,15 @@ class KGrid {
       }
     }
 
+    this.qTree.addAll(pts);
+    this.pts = pts;
+    this.lines = lines;
+  }
+
+  getGrid() {
     return {
-      pts,
-      lines
+      pts: this.pts,
+      lines: this.lines
     };
   }
 
@@ -171,7 +183,6 @@ class KGrid {
         dy = -this.H * Math.sin(angle);
       }
     }
-
     return [x0 + dx, y0 + dy];
   }
 
@@ -187,35 +198,61 @@ class KGrid {
     const newX = r * Math.cos(newAngle);
     const newY = r * Math.sin(newAngle);
 
-    console.log("ROTATE", xP, yP, newX, newY);
+    const { ant, bat, cat, dog } = this.qTree.find(
+      newX + this.width / 2,
+      newY + this.height / 2
+    );
+
+    return KPoint({
+      ant,
+      bat,
+      cat,
+      dog
+    });
+  }
+
+  translateKPoint(kPoint, dir) {
+    return KPoint({
+      ant: kPoint.ant - 4,
+      bat: kPoint.bat - 2,
+      cat: kPoint.cat - 2,
+      dog: kPoint.dog
+    });
+  }
+
+  rotateKPolygon(kPolygon, rotationAngle) {
+    const newPoints = kPolygon.kPoints.map(d =>
+      this.rotateKPoint(d, rotationAngle)
+    );
+
+    return new KPolygon(newPoints, this);
+  }
+
+  translateKPolygon(kPolygon, dir) {
+    const newPoints = kPolygon.kPoints.map(d => this.translateKPoint(d, dir));
+
+    return new KPolygon(newPoints, this);
   }
 }
 
-class KPoint {
-  constructor(ant, bat, cat, dog) {
-    this.ant = ant;
-    this.bat = bat;
-    this.cat = cat;
-    this.dog = dog;
-  }
-}
+export const KPoint = ({ ant, bat, cat, dog }) => {
+  return { ant, bat, cat, dog };
+};
 
 export class KPolygon {
-  constructor(pts) {
-    this.pts = pts;
+  constructor(kPoints, kGrid) {
+    console.log("KPolygon", kPoints);
+    this.kPoints = kPoints;
+    this.kGrid = kGrid;
   }
 
-  draw(grid) {
+  draw() {
     var path = d3.path();
 
-    const pts = this.pts.map(pt =>
-      grid.convertHexPointToCanvasPoint({
-        ant: pt[0],
-        bat: pt[1],
-        cat: pt[2],
-        dog: pt[3]
-      })
+    const pts = this.kPoints.map(pt =>
+      this.kGrid.convertHexPointToCanvasPoint(pt)
     );
+
     if (pts.length) {
       path.moveTo(pts[0][0], pts[0][1]);
       for (let i = 0; i < pts.length; i++) {

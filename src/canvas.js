@@ -1,195 +1,221 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import * as d3 from "d3";
 import { colors } from "./colors";
 import * as R from "ramda";
-import KGrid, { KPolygon } from "./kcanvas";
+import KGrid, { KPolygon, KPoint } from "./kcanvas";
 
-const Canvas = ({ gridDensity, mouseOver }) => {
-  const cRef = useRef();
-  const [width, setWidth] = useState(800);
-  const [height, setHeight] = useState(500);
-  const [points, setPoints] = useState([]);
-  const [kgrid, setKGrid] = useState(null);
-
-  const [shape, setShape] = useState([]);
-  const [activeIdx, setActiveIdx] = useState(null);
-
-  // See Page 58 in Notes
-  const shapes = [
-    {
-      pts: [
-        [1, 0, 1, 0],
-        [0, -1, 1, 0],
-        [-1, -1, 0, 0],
-        [-1, 0, -1, 0],
-        [0, 1, -1, 0],
-        [1, 1, 0, 0]
-      ],
-      color: "red"
-    },
-    {
-      pts: [
-        [-2, 2, -4, 0],
-        [-2, 0, -2, 0],
-        [0, 2, -2, 0]
-      ],
-      color: "green"
-    },
-    {
-      pts: [
-        [-2, -2, 0, 0],
-        [-2, -4, 2, 0],
-        [0, -2, 2, 0]
-      ],
-      color: "green"
-    },
-    {
-      pts: [
-        [2, 2, 0, 0],
-        [2, 0, 2, 0],
-        [4, 2, 2, 0]
-      ],
-      color: "green"
-    },
-    {
-      pts: [
-        [-1, 1, -2, 0],
-        [-2, 0, -2, 0],
-        [-2, -1, -1, 0],
-        [-1, -1, 0, 3],
-        [-1, 0, -1, 0],
-        [-1, 0, -1, 5]
-      ],
-      color: "orange"
-    },
-    {
-      pts: [
-        [1, 2, -1, 0],
-        [0, 2, -2, 0],
-        [-1, 1, -2, 0],
-        [-1, 0, -1, 5],
-        [0, 1, -1, 0],
-        [1, 1, 0, 1]
-      ],
-      color: "orange"
-    }
-  ].map(shape => ({
-    color: shape.color,
-    polygon: new KPolygon(shape.pts)
-  }));
-
-  useEffect(() => {
-    const kgrid = new KGrid(width, height);
-
-    setKGrid(kgrid);
-
-    console.log(shapes[4]);
-    const pt1 = shapes[4].polygon.pts[0];
-
-    console.log(pt1);
-
-    kgrid.rotateKPoint(
-      {
-        ant: pt1[0],
-        bat: pt1[1],
-        cat: pt1[2],
-        dog: pt1[3]
-      },
-      -Math.PI / 4
-    );
-    const shape = [
+// See Page 58 in Notes
+const startShapes = [
+  {
+    pts: [
       [1, 0, 1, 0],
       [0, -1, 1, 0],
       [-1, -1, 0, 0],
       [-1, 0, -1, 0],
       [0, 1, -1, 0],
       [1, 1, 0, 0]
-    ];
+    ],
+    color: "red"
+  },
+  {
+    pts: [
+      [-2, 2, -4, 0],
+      [-2, 0, -2, 0],
+      [0, 2, -2, 0]
+    ],
+    color: "green"
+  },
+  {
+    pts: [
+      [-1, 1, -2, 0],
+      [-2, 0, -2, 0],
+      [-2, -1, -1, 0],
+      [-1, -1, 0, 3],
+      [-1, 0, -1, 0],
+      [-1, 0, -1, 5]
+    ],
+    color: "orange"
+  }
+];
 
-    const pts = [];
-    for (let kPt of shape) {
-      pts.push(
-        kgrid.convertHexPointToCanvasPoint({
-          ant: kPt[0],
-          bat: kPt[1],
-          cat: kPt[2],
-          dog: kPt[3]
-        })
-      );
+const kgrid = new KGrid();
+
+const GridLines = React.memo(({ lines }) => (
+  <>
+    {lines.map((line, idx) => (
+      <line
+        key={idx}
+        x1={line[0][0]}
+        y1={line[0][1]}
+        x2={line[1][0]}
+        y2={line[1][1]}
+        stroke={"#eee"}
+      />
+    ))}
+  </>
+));
+
+const GridPoints = React.memo(({ points, activePoint }) => (
+  <>
+    {points.map((pt, idx) => (
+      <circle
+        key={idx}
+        cx={pt.x}
+        cy={pt.y}
+        // r={pt.idx === activeIdx ? 5 : 2}
+        r={3}
+        fill={pt === activePoint ? colors.highlight : "#ddd"}
+      />
+    ))}
+  </>
+));
+
+const Shapes = React.memo(({ shapes }) => (
+  <>
+    {shapes.map(({ polygon, color }, idx) => (
+      <path
+        key={idx}
+        d={polygon.draw(kgrid)}
+        fill={color}
+        fillOpacity={0.4}
+        stroke={"black"}
+        strokeWidth={3}
+        strokeLinejoin="round"
+      />
+    ))}
+  </>
+));
+const Canvas = ({ gridDensity, mouseOver }) => {
+  const cRef = useRef(null);
+  const [activePoint, setActivePoint] = useState(null);
+  const [gridPoints, setGridPoints] = useState([]);
+  const [gridLines, setGridLines] = useState([]);
+  const [shapes, setShapes] = useState([]);
+
+  const mouseMove = ({ x, y }) => {
+    const { x: rX, y: rY } = cRef.current.getBoundingClientRect();
+    const pt = kgrid.qTree.find(x - rX, y - rY);
+    if (pt && pt !== activePoint) {
+      setActivePoint(pt);
+      mouseOver(pt);
     }
-    setShape(pts);
-  }, []);
-
-  const setActive = (pt, idx) => {
-    mouseOver(pt);
-    setActiveIdx(idx);
   };
 
-  if (!kgrid) return <div></div>;
+  useEffect(() => {
+    const width = cRef.current.clientWidth;
+    const height = cRef.current.clientHeight;
 
-  const { pts, lines } = kgrid.genGrid(gridDensity);
+    kgrid.intitialize(width, height);
 
-  const polygons = Object.entries(R.groupBy(d => `${d.i}.${d.j}`)(pts)).map(
-    ([k, v]) => {
-      var path = d3.path();
-      path.moveTo(v[0].x, v[0].y);
-      for (let i = 0; i < v.length; i++) {
-        path.lineTo(v[i].x, v[i].y);
-      }
-      path.closePath();
+    const myShapes = startShapes.map(({ pts, color }) => ({
+      color,
+      polygon: new KPolygon(
+        pts.map(pt =>
+          KPoint({ ant: pt[0], bat: pt[1], cat: pt[2], dog: pt[3] })
+        ),
+        kgrid
+      )
+    }));
 
-      return path.toString();
+    console.log(kgrid.rotateKPoint({ ant: -2, bat: -1, cat: -1, dog: 0 }));
+
+    for (let i = 1; i < 6; i++) {
+      myShapes.push({
+        color: myShapes[2].color,
+        polygon: kgrid.rotateKPolygon(
+          myShapes[2].polygon,
+          (i * 60 * Math.PI) / 180
+        )
+      });
     }
-  );
 
-  var path = d3.path();
-  if (shape.length) {
-    path.moveTo(shape[0][0], shape[0][1]);
-    for (let i = 0; i < shape.length; i++) {
-      path.lineTo(shape[i][0], shape[i][1]);
+    for (let i = 1; i < 3; i++) {
+      myShapes.push({
+        color: myShapes[1].color,
+        polygon: kgrid.rotateKPolygon(
+          myShapes[1].polygon,
+          i * 120 * (Math.PI / 180)
+        )
+      });
     }
-    path.closePath();
-  }
 
-  const shapePath = path.toString();
+    const otherShapes = myShapes.map(shape => ({
+      color: shape.color,
+      polygon: kgrid.translateKPolygon(
+        kgrid.rotateKPolygon(shape.polygon, 180 * (Math.PI / 180)),
+        {}
+      )
+    }));
+
+    setShapes(myShapes.concat(otherShapes));
+
+    kgrid.rotateKPoint(
+      {
+        ant: -2,
+        bat: -1,
+        cat: -1,
+        dog: 0
+      },
+      (60 * Math.PI) / 180
+    );
+
+    const { pts, lines } = kgrid.getGrid();
+
+    setGridPoints(pts);
+    setGridLines(lines);
+
+    cRef.current.addEventListener("mousemove", mouseMove);
+
+    return () => {
+      cRef.current.removeEventListener("mousemove", mouseMove);
+    };
+  }, []);
+
+  // const setActive = (pt, idx) => {
+  //   mouseOver(pt);
+  //   setActiveIdx(idx);
+  // };
+
+  // console.log(gridPoints);
+
+  // if (!kgrid) return <div></div>;
+
+  // const polygons = Object.entries(R.groupBy(d => `${d.i}.${d.j}`)(pts)).map(
+  //   ([k, v]) => {
+  //     var path = d3.path();
+  //     path.moveTo(v[0].x, v[0].y);
+  //     for (let i = 0; i < v.length; i++) {
+  //       path.lineTo(v[i].x, v[i].y);
+  //     }
+  //     path.closePath();
+
+  //     return path.toString();
+  //   }
+  // );
+
+  // var path = d3.path();
+  // if (shape.length) {
+  //   path.moveTo(shape[0][0], shape[0][1]);
+  //   for (let i = 0; i < shape.length; i++) {
+  //     path.lineTo(shape[i][0], shape[i][1]);
+  //   }
+  //   path.closePath();
+  // }
+
+  // const shapePath = path.toString();
 
   return (
     <div>
-      <svg ref={cRef} width={width} height={height}>
-        {lines.map((line, idx) => (
-          <line
-            key={idx}
-            x1={line[0][0]}
-            y1={line[0][1]}
-            x2={line[1][0]}
-            y2={line[1][1]}
-            stroke={"#eee"}
-          />
-        ))}
-        {polygons.map((path, idx) => (
+      <svg ref={cRef} width={800} height={500}>
+        {/* {polygons.map((path, idx) => (
           <path key={idx} d={path} fill={"#eee"} fillOpacity={0.5} />
-        ))}
-        {pts.map((pt, idx) => (
-          <circle
-            key={idx}
-            cx={pt.x}
-            cy={pt.y}
-            r={idx === activeIdx ? 5 : 2}
-            fill={idx === activeIdx ? colors.highlight : "#ddd"}
-          />
-        ))}
+        ))} */}
+        <GridLines lines={gridLines} />
 
-        {shapes.map(({ polygon, color }, idx) => (
-          <path
-            key={idx}
-            d={polygon.draw(kgrid)}
-            fill={color}
-            fillOpacity={0.4}
-            stroke={"black"}
-            strokeWidth={3}
-          />
-        ))}
-        {pts.map((pt, idx) => (
+        <GridPoints points={gridPoints} activePoint={activePoint} />
+
+        <Shapes shapes={shapes} />
+        {/* {pts.map((pt, idx) => (
           <circle
             key={idx}
             cx={pt.x}
@@ -200,7 +226,7 @@ const Canvas = ({ gridDensity, mouseOver }) => {
             onMouseOver={() => setActive(pt, idx)}
             onMouseLeave={() => setActive(null)}
           />
-        ))}
+        ))} */}
       </svg>
     </div>
   );

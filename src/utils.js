@@ -21,9 +21,11 @@ export function* GridGenerator(nCols, nRows) {
     rEnd = nRows / 2 + 1;
   }
 
+  let idx = 0;
   for (let i = cStart; i < cEnd; i++) {
     for (let j = rStart; j < rEnd; j++) {
-      yield [i, j];
+      yield [idx, i, j];
+      idx++;
     }
   }
 }

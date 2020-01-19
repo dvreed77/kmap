@@ -13,13 +13,6 @@ function App() {
     <div>
       <div className="mx-auto mt-10 shadow flex flex-row w-8/12">
         <Canvas gridDensity={gridDensity} mouseOver={mouseOver} />
-
-        <InputNumber
-          min={1}
-          max={4}
-          defaultValue={1}
-          onChange={setGridDensity}
-        />
         {activePt && (
           <ul>
             <li>ANT: {activePt.ant}</li>
