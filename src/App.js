@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { InputNumber } from "antd";
 import Canvas from "./canvas";
 
 function App() {
   const [activePt, setActivePt] = useState(null);
-  const [gridDensity, setGridDensity] = useState(1);
   const mouseOver = pt => {
     setActivePt(pt);
   };
@@ -12,7 +10,7 @@ function App() {
   return (
     <div>
       <div className="mx-auto mt-10 shadow flex flex-row w-8/12">
-        <Canvas gridDensity={gridDensity} mouseOver={mouseOver} />
+        <Canvas mouseOver={mouseOver} />
         {activePt && (
           <ul>
             <li>ANT: {activePt.ant}</li>
