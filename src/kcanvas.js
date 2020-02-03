@@ -1,6 +1,10 @@
 import { SQRT_3, GridGenerator, isOdd } from "./utils";
+import { fromTriangles, applyToPoints } from "transformation-matrix";
 import * as d3 from "d3";
 import { find, zipObject } from "lodash";
+import { polygonHull } from "d3-polygon";
+
+// Using https://github.com/chrvadala/transformation-matrix for transformations
 class KGrid {
   constructor() {
     this.kPoints = [];
@@ -215,6 +219,16 @@ export class KPolygon {
     this.color = color;
   }
 
+  tMat() {
+    const hull1 = this.color.hull;
+    const hull2 = this.kPoints;
+
+    // get transMatrix from hull1 to hull2
+    const triangle1 = hull1.slice(0, 3).map(d => [d.x, d.y]);
+    const triangle2 = hull2.slice(0, 3).map(d => [d.x, d.y]);
+    return fromTriangles(triangle1, triangle2);
+  }
+
   copy() {
     return new KPolygon(this.kPoints, this.color);
   }
@@ -229,14 +243,16 @@ export class KPolygon {
     return this;
   }
 
-  pathString() {
+  pathString(tMat) {
     var path = d3.path();
 
-    const density = 1;
+    const points = this.kPoints.map(d => [d.x, d.y]);
 
-    if (this.kPoints.length) {
-      path.moveTo(this.kPoints[0].x / density, this.kPoints[0].y / density);
-      this.kPoints.forEach(kP => path.lineTo(kP.x / density, kP.y / density));
+    const newPoints = tMat ? applyToPoints(tMat, points) : points;
+
+    if (newPoints.length) {
+      path.moveTo(newPoints[0][0], newPoints[0][1]);
+      newPoints.forEach(([x, y]) => path.lineTo(x, y));
       path.closePath();
     }
 
@@ -245,8 +261,9 @@ export class KPolygon {
 }
 
 export class KPolygonGroup {
-  constructor(kPolygons = []) {
+  constructor(kPolygons = [], hull = []) {
     this.kPolygons = kPolygons;
+    this.hull = hull;
   }
 
   add(kPolygon) {
@@ -260,6 +277,32 @@ export class KPolygonGroup {
   rotate(rotationAngle) {
     this.kPolygons = this.kPolygons.map(kP => kP.rotate(rotationAngle));
     return this;
+  }
+
+  hullString() {
+    const pts = this.kPolygons.flatMap(kPolygon =>
+      kPolygon.kPoints.map(kPoint => kPoint)
+    );
+
+    const hull = polygonHull(
+      pts.map(kPoint => [kPoint.x, kPoint.y, kPoint.idx])
+    );
+
+    console.log(
+      pts,
+      hull,
+      pts.find(pt => pt.idx === "96.0")
+    );
+
+    var path = d3.path();
+
+    if (this.hull.length) {
+      path.moveTo(this.hull[0].x, this.hull[0].y);
+      this.hull.forEach(kP => path.lineTo(kP.x, kP.y));
+      path.closePath();
+    }
+
+    return path.toString();
   }
 
   translate(translation) {

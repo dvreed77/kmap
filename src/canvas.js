@@ -1,11 +1,16 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import KGrid, { KPolygon, KPolygonGroup } from "./kcanvas";
 import { GridLines, GridPoints } from "./Grid";
-import Shapes from "./Shapes";
-import { startShapes } from "./data";
+import { compose } from "transformation-matrix";
+import { colors } from "./colors";
+
+import Shape2 from "./shapes/shape2";
+import Shape3 from "./shapes/shape3";
+import Shape4 from "./shapes/shape4";
+
 // See Page 58 in Notes
 
-const kgrid = new KGrid();
+// const kgrid = new KGrid();
 
 const Canvas = ({ mouseOver }) => {
   const cRef = useRef(null);
@@ -14,11 +19,13 @@ const Canvas = ({ mouseOver }) => {
   const [activePoint, setActivePoint] = useState(null);
   const [gridPoints, setGridPoints] = useState([]);
   const [gridLines, setGridLines] = useState([]);
-  const [polygonGroups, setPolygonGroups] = useState([]);
+  const [kGrid] = useState(new KGrid());
+  const [polygons, setPolygons] = useState([]);
+  const [clickedPoints, setClickedPoints] = useState([]);
 
   const mouseMove = ({ x, y }) => {
     const { x: rX, y: rY } = cRef.current.getBoundingClientRect();
-    const pt = kgrid.qTree.find(
+    const pt = kGrid.qTree.find(
       x - rX - canvasDims.width / 2,
       y - rY - canvasDims.height / 2
     );
@@ -28,78 +35,173 @@ const Canvas = ({ mouseOver }) => {
     }
   };
 
+  const mouseClick = useCallback(
+    ({ x, y }) => {
+      const { x: rX, y: rY } = cRef.current.getBoundingClientRect();
+      const pt = kGrid.qTree.find(
+        x - rX - canvasDims.width / 2,
+        y - rY - canvasDims.height / 2
+      );
+
+      setClickedPoints([...clickedPoints, pt]);
+    },
+    [clickedPoints]
+  );
+
+  const keyPress = ({ key }) => {
+    if (key === "c") {
+      setClickedPoints([]);
+    }
+  };
+
   useEffect(() => {
     const width = cRef.current.clientWidth;
     const height = cRef.current.clientHeight;
 
-    kgrid.intitialize(width, height);
+    console.log("KGRID init");
+    kGrid.intitialize(width, height);
 
     const svgNode = cRef.current;
 
-    const polygons = startShapes.map(
-      ({ kPoints, color }) =>
-        new KPolygon(
-          kPoints.map(kPoint => kgrid.createKPoint(kPoint)),
-          color
-        )
+    const pg1 = new KPolygon(
+      [
+        [-5, -6, 1, 4],
+        [-5, -6, 1, 2],
+        [-7, -5, -2, 4],
+        [-6, -4, -2, 2],
+        [-4, -3, -1, 4],
+        [-3, -3, 0, 2]
+      ].map(p => kGrid.createKPoint(p)),
+      colors.E
     );
 
-    console.log("MS", polygons);
+    const pG = new KPolygonGroup(
+      [pg1],
+      [
+        [-5, -6, 1, 0],
+        [-7, -4, -3, 0],
+        [-3, -2, -1, 0]
+      ].map(p => kGrid.createKPoint(p))
+    );
+
+    const pgs = [
+      new KPolygon(
+        [
+          [1, 1, 0, 0],
+          [2, 3, -1, 0],
+          [3, 2, 1, 0]
+        ].map(p => kGrid.createKPoint(p)),
+        pG
+      )
+    ];
 
     for (let i = 1; i < 6; i++) {
-      polygons.push(polygons[2].copy().rotate((i * 60 * Math.PI) / 180));
+      pgs.push(pgs[0].copy().rotate((i * 60 * Math.PI) / 180));
     }
 
-    for (let i = 1; i < 3; i++) {
-      polygons.push(polygons[1].copy().rotate((i * 120 * Math.PI) / 180));
-    }
+    setPolygons([
+      Shape4(kGrid),
+      Shape4(kGrid)
+        .copy()
+        .translate({ dAnt: -4, dBat: -2, dCat: -2 }),
+      Shape4(kGrid)
+        .copy()
+        .translate({ dAnt: -2, dBat: -4, dCat: 2 }),
+      Shape4(kGrid)
+        .copy()
+        .translate({ dAnt: 4, dBat: 2, dCat: 2 }),
+      Shape4(kGrid)
+        .copy()
+        .translate({ dAnt: 2, dBat: 4, dCat: -2 }),
+      Shape4(kGrid)
+        .copy()
+        .translate({ dAnt: 2, dBat: -2, dCat: 4 }),
+      ...pgs
+      // Shape4(kGrid)
+      //   .copy()
+      //   .translate({ dAnt: -2, dBat: 2, dCat: -4 })
+    ]);
 
-    const kG1 = new KPolygonGroup(polygons);
-
-    const kG2 = kG1.copy().translate({ dBat: -1, dCat: 1 });
-
-    kG1.rotate((60 * Math.PI) / 180).translate({ dAnt: 2, dBat: 3, dCat: -1 });
-
-    setPolygonGroups([kG1, kG2]);
-
-    // kgrid.rotateKPoint(
-    //   {
-    //     ant: -2,
-    //     bat: -1,
-    //     cat: -1,
-    //     dog: 0
-    //   },
-    //   (60 * Math.PI) / 180
-    // );
-
-    const { pts, lines } = kgrid.getGrid();
+    const { pts, lines } = kGrid.getGrid();
 
     setGridPoints(pts);
     setGridLines(lines);
 
     svgNode.addEventListener("mousemove", mouseMove);
+    window.addEventListener("keypress", keyPress);
 
     return () => {
       svgNode.removeEventListener("mousemove", mouseMove);
+      window.removeEventListener("keypress", keyPress);
     };
   }, []);
 
+  useEffect(() => {
+    const svgNode = cRef.current;
+    svgNode.addEventListener("click", mouseClick);
+
+    return () => {
+      svgNode.removeEventListener("click", mouseClick);
+    };
+  }, [mouseClick]);
+
   return (
     <div>
+      {JSON.stringify(clickedPoints.map(d => [d.ant, d.bat, d.cat, d.dog]))}
       <svg ref={cRef} width={canvasDims.width} height={canvasDims.height}>
         <g
           transform={`translate(${canvasDims.width / 2}, ${canvasDims.height /
             2})`}
         >
-          <GridLines lines={gridLines} />
-          <GridPoints points={gridPoints} activePoint={activePoint} />
-          {polygonGroups.map(pG => (
-            <Shapes shapes={pG.kPolygons} />
+          {/* <GridLines lines={gridLines} />
+          <GridPoints points={gridPoints} activePoint={activePoint} /> */}
+          {polygons.map((kPolygon, idx) => (
+            <Polygon key={idx} kPolygon={kPolygon} />
           ))}
         </g>
       </svg>
     </div>
   );
 };
+
+const PolygonGroup = React.memo(({ kPolygonGroup, drawHull = false }) => {
+  return (
+    <g>
+      {kPolygonGroup.kPolygons.map((kPolygon, idx) => (
+        <Polygon key={idx} kPolygon={kPolygon} tMat={kPolygonGroup.tMat} />
+      ))}
+    </g>
+  );
+});
+
+const Polygon = React.memo(({ kPolygon, tMat }) => {
+  if (kPolygon.color instanceof KPolygonGroup) {
+    let tMat2;
+    if (tMat) {
+      tMat2 = compose([tMat, kPolygon.tMat()]);
+    } else {
+      tMat2 = kPolygon.tMat();
+    }
+
+    return (
+      <>
+        {kPolygon.color.kPolygons.map((kPolygon, idx) => (
+          <Polygon key={idx} kPolygon={kPolygon} tMat={tMat2} />
+        ))}
+      </>
+    );
+  } else {
+    return (
+      <path
+        d={kPolygon.pathString(tMat)}
+        fill={kPolygon.color}
+        fillOpacity={1}
+        stroke={"black"}
+        strokeWidth={3}
+        strokeLinejoin="round"
+      />
+    );
+  }
+});
 
 export default Canvas;
