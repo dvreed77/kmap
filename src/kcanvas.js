@@ -243,6 +243,44 @@ export class KPolygon {
     return this;
   }
 
+  position({ ant, bat, cat }) {
+    // console.log(this.kPoints[0].ant, this.kPoints[0].bat, this.kPoints[0].cat);
+    // console.log(ant, bat, cat);
+    const dAnt = ant - this.kPoints[0].ant;
+    const dBat = bat - this.kPoints[0].bat;
+    const dCat = cat - this.kPoints[0].cat;
+
+    // console.log(dAnt, dBat, dCat);
+
+    this.kPoints = this.kPoints.map(kPt => kPt.translate({ dAnt, dBat, dCat }));
+
+    // console.log(this.kPoints[0].ant, this.kPoints[0].bat, this.kPoints[0].cat);
+    // console.log(ant, bat, cat);
+
+    // console.log("====");
+
+    return this;
+  }
+
+  center() {
+    const aMin = Math.min(...this.kPoints.map(d => d.ant));
+    const bMin = Math.min(...this.kPoints.map(d => d.bat));
+    const cMin = Math.min(...this.kPoints.map(d => d.cat));
+
+    const aMax = Math.max(...this.kPoints.map(d => d.ant));
+    const bMax = Math.max(...this.kPoints.map(d => d.bat));
+    const cMax = Math.max(...this.kPoints.map(d => d.cat));
+
+    this.kPoints = this.kPoints.map(d =>
+      d.translate({
+        dAnt: -(aMin + aMax) / 2,
+        dBat: -(bMin + bMax) / 2,
+        dCat: -(cMin + cMax) / 2
+      })
+    );
+    return this;
+  }
+
   pathString(tMat) {
     var path = d3.path();
 
