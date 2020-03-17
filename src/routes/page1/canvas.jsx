@@ -1,10 +1,9 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import KGrid, { KPolygon, KPolygonGroup } from "./kcanvas";
-import { GridLines, GridPoints } from "./Grid";
+import KGrid, { KPolygon, KPolygonGroup } from "../../kcanvas";
+import { GridLines, GridPoints } from "../../Grid";
 import { compose } from "transformation-matrix";
-import * as d3 from "d3";
-
-// See Page 58 in Notes
+import * as d3 from "d3"; // See Page 58 in Notes
+import { Menu, Dropdown } from "antd";
 
 const poly = kgrid =>
   new KPolygon(
@@ -42,10 +41,10 @@ const poly3 = kgrid =>
     "green"
   );
 
-const Canvas = ({ mouseOver }) => {
+const Canvas = ({ className, onClick, drawingPoly }) => {
   const cRef = useRef(null);
 
-  const [canvasDims] = useState({ width: 800, height: 500 });
+  const [canvasDims, setCanvasDims] = useState({ width: 800, height: 500 });
   const [activePoint, setActivePoint] = useState(null);
   const [gridPoints, setGridPoints] = useState([]);
   const [activePolygon, setActivePolygon] = useState(null);
@@ -86,45 +85,42 @@ const Canvas = ({ mouseOver }) => {
     }
   };
 
-  const mouseClick = useCallback(
-    ({ clientX: x, clientY: y }) => {
-      const { x: rX, y: rY } = cRef.current.getBoundingClientRect();
-      const pt = kGrid.qTree.find(
-        x - rX - canvasDims.width / 2,
-        y - rY - canvasDims.height / 2
-      );
+  const mouseClick = ({ clientX: x, clientY: y }) => {
+    const { x: rX, y: rY } = cRef.current.getBoundingClientRect();
+    const pt = kGrid.qTree.find(
+      x - rX - canvasDims.width / 2,
+      y - rY - canvasDims.height / 2
+    );
 
-      if (pt === clickedPoints[0]) {
-        setPolygons([
-          ...polygons,
-          new KPolygon(
-            clickedPoints.map(p => kGrid.createKPoint(p)),
-            "blue"
-          )
-        ]);
-        setClickedPoints([]);
-      } else {
-        setClickedPoints([...clickedPoints, pt]);
-      }
-    },
-    [clickedPoints]
-  );
+    onClick(pt);
 
-  const keyPress = ({ key }) => {
-    if (key === "c") {
-      setClickedPoints([]);
-    } else if (key === "m") {
-      console.log("In Moving state");
-      setCanvasState("MOVE");
-    } else if (key === "x") {
-      console.log("NO STATE");
-      setCanvasState(null);
-    }
+    // if (pt === clickedPoints[0]) {
+    //   setPolygons([
+    //     ...polygons,
+    //     new KPolygon(
+    //       clickedPoints.map(p => kGrid.createKPoint(p)),
+    //       "blue"
+    //     )
+    //   ]);
+    //   setClickedPoints([]);
+    // } else {
+    //   setClickedPoints([...clickedPoints, pt]);
+    // }
+  };
+
+  const duplicate = () => {
+    console.log("DUPL", activePolygon);
   };
 
   useEffect(() => {
-    const width = cRef.current.clientWidth;
+    const width = cRef.current.parentNode.clientWidth;
     const height = cRef.current.clientHeight;
+
+    setCanvasDims({ width, height });
+  }, [cRef]);
+
+  useEffect(() => {
+    const { width, height } = canvasDims;
 
     kGrid.intitialize(width, height);
 
@@ -134,12 +130,6 @@ const Canvas = ({ mouseOver }) => {
 
     setGridPoints(pts);
     setGridLines(lines);
-
-    window.addEventListener("keypress", keyPress);
-
-    return () => {
-      window.removeEventListener("keypress", keyPress);
-    };
   }, []);
 
   var path = d3.path();
@@ -159,10 +149,13 @@ const Canvas = ({ mouseOver }) => {
     setActivePolygon(idx);
   };
 
-  return (
-    <div>
-      {JSON.stringify(clickedPoints.map(d => [d.ant, d.bat, d.cat, d.dog]))}
+  console.log("DP", drawingPoly);
+  if (drawingPoly) {
+    console.log(drawingPoly.draw());
+  }
 
+  return (
+    <div className={className}>
       <svg
         ref={cRef}
         width={canvasDims.width}
@@ -181,63 +174,84 @@ const Canvas = ({ mouseOver }) => {
               key={idx}
               kPolygon={kPolygon}
               setActive={() => setActive(idx)}
+              setState={setCanvasState}
             />
           ))}
-          <path d={pString} stroke="red" fill="red" opacity="0.3" />
+          {/* {drawingPoly && (
+            <path
+              d={drawingPoly.draw()}
+              stroke="red"
+              fill="red"
+              opacity="0.3"
+            />
+          )} */}
         </g>
       </svg>
     </div>
   );
 };
 
-const Polygon = React.memo(({ kPolygon, tMat, setActive: setActive2 }) => {
-  const [hover, setHover] = useState(false);
-  const [active, setActive] = useState(false);
-  const onMouseOver = () => {
-    setHover(true);
-  };
+const Polygon = React.memo(
+  ({ kPolygon, tMat, setActive: setActive2, setState }) => {
+    const [hover, setHover] = useState(false);
+    const [active, setActive] = useState(false);
+    const onMouseOver = () => {
+      setHover(true);
+    };
 
-  const onMouseLeave = () => {
-    setHover(false);
-  };
+    const onMouseLeave = () => {
+      setHover(false);
+    };
 
-  const onMouseClick = event => {
-    event.stopPropagation();
-    setActive(!active);
+    const onMouseClick = event => {
+      event.stopPropagation();
+      setActive(!active);
 
-    setActive2();
-  };
+      setActive2();
+    };
 
-  if (kPolygon.color instanceof KPolygonGroup) {
-    let tMat2;
-    if (tMat) {
-      tMat2 = compose([tMat, kPolygon.tMat()]);
+    const menu = (
+      <Menu>
+        <Menu.Item key="1" onClick={() => setState("MOVE")}>
+          move
+        </Menu.Item>
+        <Menu.Item key="2">duplicate</Menu.Item>
+      </Menu>
+    );
+
+    if (kPolygon.color instanceof KPolygonGroup) {
+      let tMat2;
+      if (tMat) {
+        tMat2 = compose([tMat, kPolygon.tMat()]);
+      } else {
+        tMat2 = kPolygon.tMat();
+      }
+
+      return (
+        <>
+          {kPolygon.color.kPolygons.map((kPolygon, idx) => (
+            <Polygon key={idx} kPolygon={kPolygon} tMat={tMat2} />
+          ))}
+        </>
+      );
     } else {
-      tMat2 = kPolygon.tMat();
+      return (
+        <Dropdown overlay={menu} trigger={["contextMenu"]}>
+          <path
+            d={kPolygon.pathString(tMat)}
+            fill={active ? "red" : hover ? "orange" : kPolygon.color}
+            fillOpacity={0.4}
+            stroke={"black"}
+            strokeWidth={3}
+            strokeLinejoin="round"
+            onMouseOver={onMouseOver}
+            onMouseLeave={onMouseLeave}
+            onClick={onMouseClick}
+          />
+        </Dropdown>
+      );
     }
-
-    return (
-      <>
-        {kPolygon.color.kPolygons.map((kPolygon, idx) => (
-          <Polygon key={idx} kPolygon={kPolygon} tMat={tMat2} />
-        ))}
-      </>
-    );
-  } else {
-    return (
-      <path
-        d={kPolygon.pathString(tMat)}
-        fill={active ? "red" : hover ? "orange" : kPolygon.color}
-        fillOpacity={0.4}
-        stroke={"black"}
-        strokeWidth={3}
-        strokeLinejoin="round"
-        onMouseOver={onMouseOver}
-        onMouseLeave={onMouseLeave}
-        onClick={onMouseClick}
-      />
-    );
   }
-});
+);
 
 export default Canvas;
