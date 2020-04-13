@@ -136,6 +136,8 @@ export const Page2 = () => {
     setAction({ action: "MOVE", data: { id: newId } } as any);
   };
 
+  console.log("dave");
+
   const setColor = (id: string, color: string) => {
     setPolygons(
       R.over(
