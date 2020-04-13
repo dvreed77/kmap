@@ -1,6 +1,9 @@
 import React from "react";
 
-export const Boundary = ({ width, height }) => {
+export const Boundary = ({ kGrid }) => {
+  const width = kGrid.cWidth;
+  const height = kGrid.cHeight;
+
   return (
     <rect
       className="text-gray-300 stroke-current stroke-2"

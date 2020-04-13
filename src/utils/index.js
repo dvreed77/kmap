@@ -1,7 +1,6 @@
 import { path as d3Path } from "d3";
 
 export * from "./generateGrid";
-export * from "./convertPt";
 
 export const SQRT_3 = Math.sqrt(3);
 

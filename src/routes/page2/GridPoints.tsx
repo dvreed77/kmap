@@ -1,11 +1,17 @@
 import React from "react";
 import { isOdd } from "../../utils";
-export const GridPoints = React.memo(({ kGrid, activePt }) => {
+
+interface GridPointsProps {
+  kGrid: any;
+}
+
+export const GridPoints = React.memo<GridPointsProps>(({ kGrid }) => {
+  // console.log("GridPoints", kGrid, activePt);
   const nPts = React.useMemo(() => kGrid.generateGrid(), [kGrid]);
 
-  const newI = isOdd(activePt.cat)
-    ? activePt.ant - (activePt.cat + 1) / 2
-    : activePt.ant + activePt.cat / 2;
+  // const newI = isOdd(activePt.cat)
+  //   ? activePt.ant - (activePt.cat + 1) / 2
+  //   : activePt.ant + activePt.cat / 2;
 
   // console.log(
   //   [activePt.ant, activePt.bat, activePt.cat, activePt.dog],
@@ -14,7 +20,7 @@ export const GridPoints = React.memo(({ kGrid, activePt }) => {
   // );
   return (
     <>
-      {nPts.map(({ idx, x, y }) => {
+      {nPts.map(({ idx, x, y }: any) => {
         return (
           <circle
             key={idx}

@@ -9,5 +9,5 @@ export const colors = {
   B: "#1C418C",
   C: "#F2B705",
   D: "#F29F05",
-  E: "#F2C2C2"
+  E: "#F2C2C2",
 };

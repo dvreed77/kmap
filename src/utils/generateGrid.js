@@ -44,6 +44,7 @@ export const KGrid = function(nCols, nRows) {
   this.nCols = nCols;
   this.nRows = nRows;
   this.cWidth = null;
+  this.cHeight = null;
   this.hexDims = {};
 
   this.qTree = d3QuadTree()
