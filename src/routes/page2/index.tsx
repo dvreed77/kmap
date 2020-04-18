@@ -5,14 +5,8 @@ import { GridPoints } from "./GridPoints";
 import { Polygon } from "./Polygon";
 import { Boundary } from "./Boundary";
 import * as R from "ramda";
-import {
-  scale,
-  rotate,
-  translate,
-  compose,
-  applyToPoint,
-  Point,
-} from "transformation-matrix";
+import { rotate, compose, applyToPoint, Point } from "transformation-matrix";
+import { KGrid } from "../../utils";
 
 const octagon = {
   id: "0",
@@ -89,24 +83,20 @@ const movePolygon = R.curry((pt: KPoint, polygon_: KPolygon) => {
   return polygon;
 });
 
-// type Point2 = { x: number; y: number } | [number, number];
-
-// const a = [1, 2] as Point2;
-
-// console.log("dave", a[0]);
-
 const rotatePolygon = R.curry((kGrid: any, polygon_: KPolygon) => {
   const polygon = R.clone(polygon_);
 
   const [x0, y0] = kGrid.convertPt(polygon.kPts[0]);
 
-  console.log(polygon.kPts[0]);
+  console.log(polygon.kPts[0], x0, y0);
 
   const pts = polygon.kPts.map((pt) => {
     const [x1, y1] = kGrid.convertPt(pt);
 
     return [x1 - x0, y1 - y0] as Point;
   });
+
+  console.log(pts);
 
   let matrix = compose(rotate(Math.PI / 3));
 
@@ -115,12 +105,22 @@ const rotatePolygon = R.curry((kGrid: any, polygon_: KPolygon) => {
     return [p[0] + x0, p[1] + y0];
   });
 
+  console.log(pts2, kGrid.qTree.find(0, 0));
+
   const newKPoints = pts2.map((pt) => kGrid.qTree.find(pt[0], pt[1]));
 
   polygon.kPts = newKPoints;
 
+  console.log(newKPoints);
+
   return polygon;
 });
+
+const kGrid = new KGrid(20, 20);
+kGrid.setWidth(500);
+kGrid.generateGrid();
+
+console.log(rotatePolygon(kGrid, octagon));
 
 export const Page2 = () => {
   const [polygons, setPolygons] = React.useState(() => {
@@ -194,17 +194,6 @@ export const Page2 = () => {
 
   const onRotate = (kGrid: any, id: string) => {
     setPolygons(R.over(lensById(id), rotatePolygon(kGrid), polygons));
-
-    // const dAnt = pt.ant - refPt.ant;
-    // const dBat = pt.bat - refPt.bat;
-    // const dCat = pt.cat - refPt.cat;
-    // polygon.kPts = polygon.kPts.map((pt: KPoint) => ({
-    //   ...pt,
-    //   ant: pt.ant + dAnt,
-    //   bat: pt.bat + dBat,
-    //   cat: pt.cat + dCat,
-    // }));
-    // return polygon;
   };
 
   return (

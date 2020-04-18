@@ -29,6 +29,7 @@ export const Polygon = React.memo<PolygonProps>(
   }) => {
     const dPath = genPathString(pts, closed);
 
+    console.log("render polygon");
     const menu = (
       <Menu>
         <Menu.Item
