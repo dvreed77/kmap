@@ -1,13 +1,10 @@
-import React, { useState } from "react";
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import * as React from "react";
 import { Modal } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithubSquare } from "@fortawesome/free-brands-svg-icons";
 
-import { Page2 } from "./routes/page2";
-
-const Header = () => {
-  const [modalVisible, setModalVisible] = useState(false);
+export const Header = () => {
+  const [modalVisible, setModalVisible] = React.useState(false);
   return (
     <>
       <Modal
@@ -47,18 +44,3 @@ const Header = () => {
     </>
   );
 };
-
-function App() {
-  return (
-    <Router>
-      <Header />
-      <div className="w-10/12 mx-auto flex flex-row">
-        <Switch>
-          <Route path="/" component={Page2} />
-        </Switch>
-      </div>
-    </Router>
-  );
-}
-
-export default App;

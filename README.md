@@ -1,3 +1,32 @@
-# Nested Kisrhombille Tessellation
+# empty-project
 
-https://github.com/johnalexandergreene/Geom_Kisrhombille/blob/master/README.md?utm_source=share&utm_medium=ios_app&utm_name=iossmf
+Empty project.
+
+## Building and running on localhost
+
+First install dependencies:
+
+```sh
+npm install
+```
+
+To run in hot module reloading mode:
+
+```sh
+npm start
+```
+
+To create a production build:
+
+```sh
+npm run build-prod
+```
+
+## Running
+
+Open the file `dist/index.html` in your browser
+
+## Credits
+
+Made with [createapp.dev](https://createapp.dev/)
+

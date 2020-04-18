@@ -1,11 +1,18 @@
-import React, { useState } from "react";
-
+import * as React from "react";
 import { Canvas } from "./canvas";
 import { Sidebar } from "./sidebar";
 import { GridPoints } from "./GridPoints";
 import { Polygon } from "./Polygon";
 import { Boundary } from "./Boundary";
 import * as R from "ramda";
+import {
+  scale,
+  rotate,
+  translate,
+  compose,
+  applyToPoint,
+  Point,
+} from "transformation-matrix";
 
 const octagon = {
   id: "0",
@@ -42,14 +49,6 @@ const octagon2 = {
   })),
   color: "blue",
 };
-
-// function addPoint(pts, newPt) {}
-
-// function deletePoint(pts, pt) {}
-
-// function createPolygon() {}
-
-// function deletePolygon() {}
 
 interface KPoint {
   ant: number;
@@ -90,8 +89,41 @@ const movePolygon = R.curry((pt: KPoint, polygon_: KPolygon) => {
   return polygon;
 });
 
+// type Point2 = { x: number; y: number } | [number, number];
+
+// const a = [1, 2] as Point2;
+
+// console.log("dave", a[0]);
+
+const rotatePolygon = R.curry((kGrid: any, polygon_: KPolygon) => {
+  const polygon = R.clone(polygon_);
+
+  const [x0, y0] = kGrid.convertPt(polygon.kPts[0]);
+
+  console.log(polygon.kPts[0]);
+
+  const pts = polygon.kPts.map((pt) => {
+    const [x1, y1] = kGrid.convertPt(pt);
+
+    return [x1 - x0, y1 - y0] as Point;
+  });
+
+  let matrix = compose(rotate(Math.PI / 3));
+
+  const pts2 = pts.map((pt) => {
+    const p = applyToPoint(matrix, pt) as [number, number];
+    return [p[0] + x0, p[1] + y0];
+  });
+
+  const newKPoints = pts2.map((pt) => kGrid.qTree.find(pt[0], pt[1]));
+
+  polygon.kPts = newKPoints;
+
+  return polygon;
+});
+
 export const Page2 = () => {
-  const [polygons, setPolygons] = useState(() => {
+  const [polygons, setPolygons] = React.useState(() => {
     var p = localStorage.getItem("myData");
 
     if (p) {
@@ -99,8 +131,8 @@ export const Page2 = () => {
     }
     return [octagon, octagon2] as KPolygon[];
   });
-  const [action, setAction] = useState({ action: null, data: null });
-  const [clickedPoints, setClickedPoints] = useState([]);
+  const [action, setAction] = React.useState({ action: null, data: null });
+  const [clickedPoints, setClickedPoints] = React.useState([]);
 
   const onMouseMove = (pt: any) => {
     if (action.action === "MOVE") {
@@ -160,8 +192,19 @@ export const Page2 = () => {
     localStorage.setItem("myData", JSON.stringify(polygons));
   };
 
-  const onRotate = () => {
-    console.log("ROTATE");
+  const onRotate = (kGrid: any, id: string) => {
+    setPolygons(R.over(lensById(id), rotatePolygon(kGrid), polygons));
+
+    // const dAnt = pt.ant - refPt.ant;
+    // const dBat = pt.bat - refPt.bat;
+    // const dCat = pt.cat - refPt.cat;
+    // polygon.kPts = polygon.kPts.map((pt: KPoint) => ({
+    //   ...pt,
+    //   ant: pt.ant + dAnt,
+    //   bat: pt.bat + dBat,
+    //   cat: pt.cat + dCat,
+    // }));
+    // return polygon;
   };
 
   return (
@@ -190,7 +233,7 @@ export const Page2 = () => {
                   onDelete={onDelete}
                   setColor={setColor}
                   onDuplicate={onDuplicate}
-                  onRotate={onRotate}
+                  onRotate={(id: string) => onRotate(kGrid, id)}
                 />
               ))}
               <Polygon
