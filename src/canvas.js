@@ -1,12 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import KGrid, { KPolygon, KPolygonGroup } from "./kcanvas";
-import { GridLines, GridPoints } from "./Grid";
 import { compose } from "transformation-matrix";
 import { colors } from "./colors";
-
-import Shape2 from "./shapes/shape2";
-import Shape3 from "./shapes/shape3";
-import Shape4 from "./shapes/shape4";
 
 // See Page 58 in Notes
 
@@ -17,8 +12,6 @@ const Canvas = ({ mouseOver }) => {
 
   const [canvasDims] = useState({ width: 800, height: 500 });
   const [activePoint, setActivePoint] = useState(null);
-  const [gridPoints, setGridPoints] = useState([]);
-  const [gridLines, setGridLines] = useState([]);
   const [kGrid] = useState(new KGrid());
   const [polygons, setPolygons] = useState([]);
   const [clickedPoints, setClickedPoints] = useState([]);
@@ -70,8 +63,8 @@ const Canvas = ({ mouseOver }) => {
         [-7, -5, -2, 4],
         [-6, -4, -2, 2],
         [-4, -3, -1, 4],
-        [-3, -3, 0, 2]
-      ].map(p => kGrid.createKPoint(p)),
+        [-3, -3, 0, 2],
+      ].map((p) => kGrid.createKPoint(p)),
       colors.E
     );
 
@@ -80,8 +73,8 @@ const Canvas = ({ mouseOver }) => {
       [
         [-5, -6, 1, 0],
         [-7, -4, -3, 0],
-        [-3, -2, -1, 0]
-      ].map(p => kGrid.createKPoint(p))
+        [-3, -2, -1, 0],
+      ].map((p) => kGrid.createKPoint(p))
     );
 
     const pgs = [
@@ -89,43 +82,19 @@ const Canvas = ({ mouseOver }) => {
         [
           [1, 1, 0, 0],
           [2, 3, -1, 0],
-          [3, 2, 1, 0]
-        ].map(p => kGrid.createKPoint(p)),
+          [3, 2, 1, 0],
+        ].map((p) => kGrid.createKPoint(p)),
         pG
-      )
+      ),
     ];
 
     for (let i = 1; i < 6; i++) {
       pgs.push(pgs[0].copy().rotate((i * 60 * Math.PI) / 180));
     }
 
-    setPolygons([
-      Shape4(kGrid),
-      Shape4(kGrid)
-        .copy()
-        .translate({ dAnt: -4, dBat: -2, dCat: -2 }),
-      Shape4(kGrid)
-        .copy()
-        .translate({ dAnt: -2, dBat: -4, dCat: 2 }),
-      Shape4(kGrid)
-        .copy()
-        .translate({ dAnt: 4, dBat: 2, dCat: 2 }),
-      Shape4(kGrid)
-        .copy()
-        .translate({ dAnt: 2, dBat: 4, dCat: -2 }),
-      Shape4(kGrid)
-        .copy()
-        .translate({ dAnt: 2, dBat: -2, dCat: 4 }),
-      ...pgs
-      // Shape4(kGrid)
-      //   .copy()
-      //   .translate({ dAnt: -2, dBat: 2, dCat: -4 })
-    ]);
+    setPolygons([...pgs]);
 
     const { pts, lines } = kGrid.getGrid();
-
-    setGridPoints(pts);
-    setGridLines(lines);
 
     svgNode.addEventListener("mousemove", mouseMove);
     window.addEventListener("keypress", keyPress);
@@ -147,11 +116,12 @@ const Canvas = ({ mouseOver }) => {
 
   return (
     <div>
-      {JSON.stringify(clickedPoints.map(d => [d.ant, d.bat, d.cat, d.dog]))}
+      {JSON.stringify(clickedPoints.map((d) => [d.ant, d.bat, d.cat, d.dog]))}
       <svg ref={cRef} width={canvasDims.width} height={canvasDims.height}>
         <g
-          transform={`translate(${canvasDims.width / 2}, ${canvasDims.height /
-            2})`}
+          transform={`translate(${canvasDims.width / 2}, ${
+            canvasDims.height / 2
+          })`}
         >
           {/* <GridLines lines={gridLines} />
           <GridPoints points={gridPoints} activePoint={activePoint} /> */}
@@ -163,16 +133,6 @@ const Canvas = ({ mouseOver }) => {
     </div>
   );
 };
-
-const PolygonGroup = React.memo(({ kPolygonGroup, drawHull = false }) => {
-  return (
-    <g>
-      {kPolygonGroup.kPolygons.map((kPolygon, idx) => (
-        <Polygon key={idx} kPolygon={kPolygon} tMat={kPolygonGroup.tMat} />
-      ))}
-    </g>
-  );
-});
 
 const Polygon = React.memo(({ kPolygon, tMat }) => {
   if (kPolygon.color instanceof KPolygonGroup) {

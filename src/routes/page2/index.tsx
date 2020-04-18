@@ -4,7 +4,6 @@ import { Canvas } from "./canvas";
 import { Sidebar } from "./sidebar";
 import { GridPoints } from "./GridPoints";
 import { Polygon } from "./Polygon";
-import { KGrid } from "../../utils";
 import { Boundary } from "./Boundary";
 import * as R from "ramda";
 
@@ -92,7 +91,14 @@ const movePolygon = R.curry((pt: KPoint, polygon_: KPolygon) => {
 });
 
 export const Page2 = () => {
-  const [polygons, setPolygons] = useState([octagon, octagon2]);
+  const [polygons, setPolygons] = useState(() => {
+    var p = localStorage.getItem("myData");
+
+    if (p) {
+      return JSON.parse(p) as KPolygon[];
+    }
+    return [octagon, octagon2] as KPolygon[];
+  });
   const [action, setAction] = useState({ action: null, data: null });
   const [clickedPoints, setClickedPoints] = useState([]);
 
@@ -111,7 +117,7 @@ export const Page2 = () => {
         setPolygons([
           ...polygons,
           {
-            id: polygons.length,
+            id: Math.random().toString(36).slice(2),
             kPts: clickedPoints,
             color: "green",
           },
@@ -130,13 +136,11 @@ export const Page2 = () => {
 
   const onDuplicate = (id: string) => {
     const polygon = R.clone(R.find(R.propEq("id", id), polygons)) as KPolygon;
-    const newId = polygons.length.toString();
+    const newId = Math.random().toString(36).slice(2);
     polygon.id = newId;
     setPolygons(R.append(polygon, polygons));
     setAction({ action: "MOVE", data: { id: newId } } as any);
   };
-
-  console.log("dave");
 
   const setColor = (id: string, color: string) => {
     setPolygons(
@@ -150,6 +154,14 @@ export const Page2 = () => {
         polygons
       )
     );
+  };
+
+  const onSave = () => {
+    localStorage.setItem("myData", JSON.stringify(polygons));
+  };
+
+  const onRotate = () => {
+    console.log("ROTATE");
   };
 
   return (
@@ -178,6 +190,7 @@ export const Page2 = () => {
                   onDelete={onDelete}
                   setColor={setColor}
                   onDuplicate={onDuplicate}
+                  onRotate={onRotate}
                 />
               ))}
               <Polygon
@@ -193,8 +206,8 @@ export const Page2 = () => {
           )}
         </Canvas>
       </div>
-      <div className="w-2/12 bg-gray-500 h-12 flex items-center justify-center">
-        <Sidebar setAction={setAction} />
+      <div className="w-2/12 flex items-center justify-center">
+        <Sidebar setAction={setAction} onSave={onSave} />
       </div>
     </div>
   );

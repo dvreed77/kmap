@@ -2,22 +2,21 @@ import React, { useState } from "react";
 import * as d3 from "d3";
 
 import Canvas from "./canvas";
-import Sidebar from "./sidebar";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlusSquare } from "@fortawesome/free-solid-svg-icons";
 
-const UnFinishedPolygon = function() {
+const UnFinishedPolygon = function () {
   this.pts = [];
 
-  this.addPoint = function(pt) {
+  this.addPoint = function (pt) {
     this.pts.push(pt);
 
     console.log(this.pts);
   };
 
-  this.draw = function() {
-    const points = this.pts.map(d => [d.x, d.y]);
+  this.draw = function () {
+    const points = this.pts.map((d) => [d.x, d.y]);
 
     var path = d3.path();
 
@@ -33,8 +32,6 @@ const UnFinishedPolygon = function() {
   return this;
 };
 
-// console.log("DAVE", UnFinishedPolygon, new UnFinishedPolygon());
-
 const Page1 = () => {
   const [appState, setAppState] = useState(null);
 
@@ -46,20 +43,8 @@ const Page1 = () => {
     setDrawingPoly(new UnFinishedPolygon());
   };
 
-  const onClick = pt => {
+  const onClick = (pt) => {
     drawingPoly.addPoint(pt);
-    // if (pt === clickedPoints[0]) {
-    //   setPolygons([
-    //     ...polygons,
-    //     new KPolygon(
-    //       clickedPoints.map(p => kGrid.createKPoint(p)),
-    //       "blue"
-    //     )
-    //   ]);
-    //   setClickedPoints([]);
-    // } else {
-    //   setClickedPoints([...clickedPoints, pt]);
-    // }
   };
   return (
     <div className="flex mx-auto w-full">

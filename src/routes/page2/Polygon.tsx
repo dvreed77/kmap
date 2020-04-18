@@ -12,27 +12,22 @@ interface PolygonProps {
   onDelete?: any;
   setColor?: any;
   onDuplicate?: any;
+  onRotate?: any;
 }
 
 export const Polygon = React.memo<PolygonProps>(
-  ({ id, pts, color, closed, setState, onDelete, setColor, onDuplicate }) => {
+  ({
+    id,
+    pts,
+    color,
+    closed,
+    setState,
+    onDelete,
+    setColor,
+    onDuplicate,
+    onRotate,
+  }) => {
     const dPath = genPathString(pts, closed);
-    const menu2 = (
-      <Menu>
-        <Menu.Item
-          key="1"
-          onClick={() =>
-            setState({
-              action: "MOVE",
-              data: { id },
-            })
-          }
-        >
-          move
-        </Menu.Item>
-        <Menu.Item key="2">duplicate</Menu.Item>
-      </Menu>
-    );
 
     const menu = (
       <Menu>
@@ -57,12 +52,16 @@ export const Polygon = React.memo<PolygonProps>(
           <div className="flex flex-row flex-wrap" style={{ width: 100 }}>
             {R.values(colors).map((v) => (
               <div
+                key={v}
                 style={{ backgroundColor: v, width: 20, height: 20 }}
                 onClick={() => setColor(id, v)}
               />
             ))}
           </div>
         </Menu.SubMenu>
+        <Menu.Item key="rotate" onClick={() => onRotate(id)}>
+          rotate
+        </Menu.Item>
       </Menu>
     );
 

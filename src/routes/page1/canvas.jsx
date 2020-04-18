@@ -1,11 +1,11 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import KGrid, { KPolygon, KPolygonGroup } from "../../kcanvas";
 import { GridLines, GridPoints } from "../../Grid";
 import { compose } from "transformation-matrix";
 import * as d3 from "d3"; // See Page 58 in Notes
 import { Menu, Dropdown } from "antd";
 
-const poly = kgrid =>
+const poly = (kgrid) =>
   new KPolygon(
     [
       [3, 4, -1, 0],
@@ -13,45 +13,22 @@ const poly = kgrid =>
       [2, 5, -3, 0],
       [3, 6, -3, 0],
       [4, 6, -2, 0],
-      [4, 5, -1, 0]
-    ].map(p => kgrid.createKPoint(p)),
+      [4, 5, -1, 0],
+    ].map((p) => kgrid.createKPoint(p)),
     "red"
-  );
-
-const poly2 = kgrid =>
-  new KPolygon(
-    [
-      [0, -1, 1, 0],
-      [-1, -1, 0, 0],
-      [-1, 0, -1, 0],
-      [0, 1, -1, 0],
-      [1, 1, 0, 0],
-      [1, 0, 1, 0]
-    ].map(p => kgrid.createKPoint(p)),
-    "red"
-  );
-
-const poly3 = kgrid =>
-  new KPolygon(
-    [
-      [1, 1, 0, 0],
-      [1, 2, -1, 0],
-      [0, 1, -1, 0]
-    ].map(p => kgrid.createKPoint(p)),
-    "green"
   );
 
 const Canvas = ({ className, onClick, drawingPoly }) => {
   const cRef = useRef(null);
 
   const [canvasDims, setCanvasDims] = useState({ width: 800, height: 500 });
-  const [activePoint, setActivePoint] = useState(null);
+  const [activePoint] = useState(null);
   const [gridPoints, setGridPoints] = useState([]);
   const [activePolygon, setActivePolygon] = useState(null);
   const [gridLines, setGridLines] = useState([]);
   const [kGrid] = useState(new KGrid());
   const [polygons, setPolygons] = useState([]);
-  const [clickedPoints, setClickedPoints] = useState([]);
+  const [clickedPoints] = useState([]);
   const [canvasState, setCanvasState] = useState(null);
 
   const mouseMove = ({ clientX: x, clientY: y }) => {
@@ -67,7 +44,7 @@ const Canvas = ({ className, onClick, drawingPoly }) => {
         const nP = polygons[activePolygon].copy().position({
           ant: pt.ant,
           bat: pt.bat,
-          cat: pt.cat
+          cat: pt.cat,
         });
 
         console.log(
@@ -79,7 +56,7 @@ const Canvas = ({ className, onClick, drawingPoly }) => {
         setPolygons([
           ...polygons.slice(0, activePolygon),
           nP,
-          ...polygons.slice(activePolygon + 1, polygons.length)
+          ...polygons.slice(activePolygon + 1, polygons.length),
         ]);
       }
     }
@@ -134,7 +111,7 @@ const Canvas = ({ className, onClick, drawingPoly }) => {
 
   var path = d3.path();
 
-  const points = clickedPoints.map(d => [d.x, d.y]);
+  const points = clickedPoints.map((d) => [d.x, d.y]);
 
   if (points.length) {
     path.moveTo(points[0][0], points[0][1]);
@@ -144,7 +121,7 @@ const Canvas = ({ className, onClick, drawingPoly }) => {
 
   const pString = path.toString();
 
-  const setActive = idx => {
+  const setActive = (idx) => {
     console.log("ACTIVE", idx);
     setActivePolygon(idx);
   };
@@ -164,8 +141,9 @@ const Canvas = ({ className, onClick, drawingPoly }) => {
         onMouseMove={mouseMove}
       >
         <g
-          transform={`translate(${canvasDims.width / 2}, ${canvasDims.height /
-            2})`}
+          transform={`translate(${canvasDims.width / 2}, ${
+            canvasDims.height / 2
+          })`}
         >
           <GridLines lines={gridLines} />
           <GridPoints points={gridPoints} activePoint={activePoint} />
@@ -203,7 +181,7 @@ const Polygon = React.memo(
       setHover(false);
     };
 
-    const onMouseClick = event => {
+    const onMouseClick = (event) => {
       event.stopPropagation();
       setActive(!active);
 

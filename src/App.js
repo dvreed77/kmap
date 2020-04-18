@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import Canvas from "./canvas";
-import { Modal, Button } from "antd";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { Modal } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithubSquare } from "@fortawesome/free-brands-svg-icons";
 
-import Page1 from "./routes/page1";
 import { Page2 } from "./routes/page2";
 
 const Header = () => {
@@ -51,29 +49,12 @@ const Header = () => {
 };
 
 function App() {
-  const [activePt, setActivePt] = useState(null);
-  const mouseOver = pt => {
-    setActivePt(pt);
-  };
-
   return (
     <Router>
       <Header />
       <div className="w-10/12 mx-auto flex flex-row">
         <Switch>
-          <Route path="/page1" component={Page1} />
-          <Route path="/page2" component={Page2} />
-          <Route path="/">
-            <Canvas mouseOver={mouseOver} />
-            {activePt && (
-              <ul>
-                <li>ANT: {activePt.ant}</li>
-                <li>BAT: {activePt.bat}</li>
-                <li>CAT: {activePt.cat}</li>
-                <li>DOG: {activePt.dog}</li>
-              </ul>
-            )}
-          </Route>
+          <Route path="/" component={Page2} />
         </Switch>
       </div>
     </Router>
