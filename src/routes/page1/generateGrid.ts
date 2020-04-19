@@ -65,7 +65,9 @@ export class KGrid {
     this.rows = rows;
     this.width = width;
 
-    this.qTree = quadtree();
+    this.qTree = quadtree()
+      .x((d: any) => d.x)
+      .y((d: any) => d.y);
 
     const hexWidth = this.width / this.cols;
 
