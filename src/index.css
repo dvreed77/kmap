@@ -1,6 +1,6 @@
 /*!
  * 
- * antd v4.1.3
+ * antd v4.1.4
  * 
  * Copyright 2015-present, Alipay, Inc.
  * All rights reserved.
@@ -2845,6 +2845,7 @@ html {
 
 .ant-select-multiple .ant-select-selection-search-input {
   width: 100%;
+  min-width: 3px;
 }
 
 .ant-select-multiple .ant-select-selection-search-mirror {
@@ -2922,6 +2923,10 @@ html {
   line-height: 32px;
 }
 
+.ant-select-disabled .ant-select-selection-item-remove {
+  display: none;
+}
+
 /* Reset search input style */
 
 .ant-select {
@@ -2993,7 +2998,6 @@ html {
   font-size: 12px;
   line-height: 1;
   text-align: center;
-  pointer-events: none;
 }
 
 .ant-select-arrow > * {
@@ -3023,6 +3027,10 @@ html {
 
 .ant-select-open .ant-select-arrow .anticon.anticon-down {
   transform: rotate(180deg);
+}
+
+.ant-select-arrow.anticon-down {
+  pointer-events: none;
 }
 
 .ant-select-clear {
@@ -3201,8 +3209,7 @@ html {
 }
 
 .ant-select-dropdown-rtl {
-  direction: ltr;
-  text-align: right;
+  direction: rtl;
 }
 
 .ant-select-dropdown-rtl .ant-select-item-option-grouped {
@@ -4260,10 +4267,6 @@ html {
   border-radius: 2px;
 }
 
-.ant-menu-submenu-popup .submenu-title-wrapper {
-  padding-right: 20px;
-}
-
 .ant-menu-submenu-popup::before {
   position: absolute;
   top: -7px;
@@ -4866,6 +4869,11 @@ html {
   border-left: 1px solid #f0f0f0;
 }
 
+.ant-menu-rtl.ant-menu-dark .ant-menu-inline,
+.ant-menu-rtl.ant-menu-dark .ant-menu-vertical {
+  border-left: none;
+}
+
 .ant-menu-rtl.ant-menu-vertical.ant-menu-sub,
 .ant-menu-rtl.ant-menu-vertical-left.ant-menu-sub,
 .ant-menu-rtl.ant-menu-vertical-right.ant-menu-sub {
@@ -4890,11 +4898,6 @@ html {
 .ant-menu-rtl .ant-menu-item.ant-menu-item-only-child > .anticon,
 .ant-menu-rtl .ant-menu-submenu-title.ant-menu-item-only-child > .anticon {
   margin-left: 0;
-}
-
-.ant-menu-submenu-rtl.ant-menu-submenu-popup .submenu-title-wrapper {
-  padding-right: 0;
-  padding-left: 20px;
 }
 
 .ant-menu-rtl .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow,
@@ -4944,6 +4947,10 @@ html {
 .ant-menu-rtl.ant-menu-vertical .ant-menu-submenu-title {
   padding-right: 16px;
   padding-left: 34px;
+}
+
+.ant-menu-rtl.ant-menu-inline-collapsed.ant-menu-vertical .ant-menu-submenu-title {
+  padding: 0 32px;
 }
 
 .ant-menu-rtl .ant-menu-item-group-list .ant-menu-item,
@@ -5240,6 +5247,8 @@ html {
 .ant-dropdown-menu-submenu-popup {
   position: absolute;
   z-index: 1050;
+  background: transparent;
+  box-shadow: none;
 }
 
 .ant-dropdown-menu-submenu-popup > .ant-dropdown-menu {
@@ -18596,6 +18605,10 @@ textarea.ant-input-affix-wrapper {
   margin-left: 6px;
 }
 
+.ant-input-clear-icon-hidden {
+  visibility: hidden;
+}
+
 .ant-input-clear-icon:last-child {
   margin-right: 0;
 }
@@ -18626,6 +18639,10 @@ textarea.ant-input-affix-wrapper {
 
 .ant-input-textarea-clear-icon + i {
   margin-left: 6px;
+}
+
+.ant-input-textarea-clear-icon-hidden {
+  visibility: hidden;
 }
 
 .ant-input {
@@ -19116,6 +19133,20 @@ textarea.ant-input {
 
 .ant-input-password-icon:hover {
   color: rgba(0, 0, 0, 0.85);
+}
+
+.ant-input[type='color'] {
+  height: 32px;
+}
+
+.ant-input[type='color'].ant-input-lg {
+  height: 40px;
+}
+
+.ant-input[type='color'].ant-input-sm {
+  height: 24px;
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 
 .ant-input-search-icon {
@@ -24202,6 +24233,7 @@ textarea.ant-mentions {
 .ant-page-header-heading-left {
   display: flex;
   align-items: center;
+  margin: 4px 0;
   overflow: hidden;
 }
 
@@ -24232,6 +24264,7 @@ textarea.ant-mentions {
 }
 
 .ant-page-header-heading-extra {
+  margin: 4px 0;
   white-space: nowrap;
 }
 
@@ -24263,11 +24296,7 @@ textarea.ant-mentions {
 }
 
 .ant-page-header-compact .ant-page-header-heading {
-  flex-direction: column;
-}
-
-.ant-page-header-compact .ant-page-header-heading-extra {
-  margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 .ant-page-header-rtl {

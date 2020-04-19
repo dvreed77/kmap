@@ -1,10 +1,13 @@
 import { isNil } from "ramda";
-import { quadtree as d3QuadTree } from "d3";
+import { quadtree } from "d3";
 export const SQRT_3 = Math.sqrt(3);
 
-export const isOdd = (d) => !!(d % 2);
+export const isOdd = (d: number) => !!(d % 2);
 
-export function* GridGenerator(nCols, nRows) {
+export function* GridGenerator(
+  nCols: number,
+  nRows: number
+): IterableIterator<[number, number, number]> {
   // See page 68 of notes
   let cStart, cEnd;
   if (isOdd(nCols)) {
@@ -33,21 +36,38 @@ export function* GridGenerator(nCols, nRows) {
   }
 }
 
-export const KGrid = function (nCols, nRows) {
-  this.nCols = nCols;
-  this.nRows = nRows;
-  this.cWidth = null;
-  this.cHeight = null;
-  this.hexDims = {};
+type Point = [number, number];
 
-  this.qTree = d3QuadTree()
-    .x((d) => d.x)
-    .y((d) => d.y);
+export class KGrid {
+  cols: number;
+  rows: number;
+  width: number;
+  height: number;
+  qTree: any;
+  hexDims: {
+    hexWidth: number;
+    F: number;
+    G: number;
+    H: number;
+  };
+  pts: Point[] = [];
 
-  this.setWidth = function (width) {
-    this.cWidth = width;
+  constructor({
+    cols,
+    rows,
+    width = 200,
+  }: {
+    cols: number;
+    rows: number;
+    width?: number;
+  }) {
+    this.cols = cols;
+    this.rows = rows;
+    this.width = width;
 
-    const hexWidth = this.cWidth / this.nCols;
+    this.qTree = quadtree();
+
+    const hexWidth = this.width / this.cols;
 
     const G = hexWidth / 2;
     const F = G / SQRT_3;
@@ -59,45 +79,29 @@ export const KGrid = function (nCols, nRows) {
       F,
       H,
     };
-    this.cHeight = this.nRows * (F + H);
+    this.height = this.rows * (F + H);
 
-    return {
-      width: this.cWidth,
-      height: this.cHeight,
-    };
-  };
-
-  this.generateGrid = function () {
     const gridPoints = [];
-    // const gridLines = [];
 
-    for (const [idx, i, j] of GridGenerator(nCols, nRows)) {
-      let ant, bat;
-
-      const cat = j;
-
+    for (const [id, i, j] of GridGenerator(this.cols, this.rows)) {
+      const c = j;
       // Page 54 in notes
-      if (isOdd(j)) {
-        ant = (j + 1) / 2 + i;
-        bat = (1 - j) / 2 + i;
-      } else {
-        ant = j / 2 + i;
-        bat = i - j / 2;
-      }
+      const a = isOdd(j) ? (j + 1) / 2 + i : j / 2 + i;
+      const b = isOdd(j) ? (1 - j) / 2 + i : i - j / 2;
 
       for (let d = 0; d < 6; d++) {
-        const dog = d;
+        const [x, y] = this.kPtToPt0({ a, b, c, d });
 
-        const [x, y] = this.convertPt({ i, j, d });
+        this.pts.push([x, y]);
 
         gridPoints.push({
-          idx: `${idx}.${d}`,
+          id: `${id}.${d}`,
           i,
           j,
-          ant,
-          bat,
-          cat,
-          dog,
+          a,
+          b,
+          c,
+          d,
           x,
           y,
         });
@@ -105,27 +109,19 @@ export const KGrid = function (nCols, nRows) {
     }
 
     this.qTree.addAll(gridPoints);
+  }
 
-    return gridPoints;
-  };
+  pt0ToKPt([x, y]: [number, number]) {
+    return this.qTree.find(x, y);
+  }
 
-  this.convertPt = function ({ ant, bat, cat, dog, i, j, d }) {
-    if (isNil(j)) {
-      j = cat;
-    }
-
-    if (isNil(i)) {
-      i = isOdd(j) ? ant - (j + 1) / 2 : ant - j / 2;
-    }
-    if (isNil(d)) {
-      d = dog;
-    }
+  kPtToPt0({ a, b, c, d }: { a: number; b: number; c: number; d: number }) {
+    const j = c;
+    const i = isOdd(j) ? a - (j + 1) / 2 : a - j / 2;
     const { hexWidth, F, G, H } = this.hexDims;
     // see page 54 of notes
     const x0 = isOdd(j) ? i * hexWidth + hexWidth / 2 : i * hexWidth;
-
     const y0 = j * (F + H);
-
     let dx, dy;
     if (d === 0) {
       dx = 0;
@@ -140,10 +136,8 @@ export const KGrid = function (nCols, nRows) {
         dy = -H * Math.sin(angle);
       }
     }
-
     const xD = x0 + dx;
     const yD = y0 + dy;
-
     return [xD, yD];
-  };
-};
+  }
+}

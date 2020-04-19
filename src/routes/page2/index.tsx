@@ -6,58 +6,7 @@ import { Polygon } from "./Polygon";
 import { Boundary } from "./Boundary";
 import * as R from "ramda";
 import { rotate, compose, applyToPoint, Point } from "transformation-matrix";
-import { KGrid } from "../../utils";
-import { store } from "./store";
-import { Provider } from "react-redux";
-
-const poly1 = {
-  grpId: "12",
-  id: "12",
-  kPts: [
-    { ant: 0, bat: 0, cat: 0, dog: 0 },
-    { ant: -1, bat: -1, cat: 0, dog: 4 },
-    { ant: 0, bat: 0, cat: 0, dog: 2 },
-    { ant: 0, bat: 0, cat: 0, dog: 4 },
-  ],
-};
-
-const octagon = {
-  grpId: "0",
-  id: "0",
-  kPts: [
-    [1, 0, 1, 0],
-    [0, -1, 1, 0],
-    [-1, -1, 0, 0],
-    [-1, 0, -1, 0],
-    [0, 1, -1, 0],
-    [1, 1, 0, 0],
-  ].map((d) => ({
-    ant: d[0],
-    bat: d[1],
-    cat: d[2],
-    dog: d[3],
-  })),
-  color: "red",
-};
-
-const octagon2 = {
-  grpId: "1",
-  id: "1",
-  kPts: [
-    [2, 4, -2, 0],
-    [1, 3, -2, 0],
-    [0, 3, -3, 0],
-    [0, 4, -4, 0],
-    [1, 5, -4, 0],
-    [2, 5, -3, 0],
-  ].map((d) => ({
-    ant: d[0],
-    bat: d[1],
-    cat: d[2],
-    dog: d[3],
-  })),
-  color: "blue",
-};
+import { shapes } from "./shapes";
 
 interface KPoint {
   ant: number;
@@ -116,10 +65,6 @@ const movePolygon = R.curry((kGrid: any, pt: KPoint, polygon_: KPolygon) => {
 const rotatePolygon = R.curry((kGrid: any, polygon_: KPolygon) => {
   const polygon = R.clone(polygon_);
 
-  // const { ant, cat } = polygon.kPts[0];
-
-  // const [x0, y0] = kGrid.convertPt({ ant, cat, dog: 0 });
-
   const ptsA = polygon.kPts.map((kPt) => kGrid.convertPt(kPt));
   // con
   // const anchorPt = polygon.kPts[0];
@@ -154,7 +99,7 @@ export const Page2 = () => {
     if (p) {
       return JSON.parse(p) as KPolygon[];
     }
-    return [octagon, octagon2] as KPolygon[];
+    return shapes as KPolygon[];
   });
   const [action, setAction] = React.useState({ action: null, data: null });
   const [clickedPoints, setClickedPoints] = React.useState([]);
