@@ -1,9 +1,9 @@
-import React from "react";
+import * as React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlusSquare, faSave } from "@fortawesome/free-solid-svg-icons";
-import { Tooltip } from "antd";
+import { Tooltip, Switch } from "antd";
 
-export const Sidebar = ({ setAction, onSave }: any) => {
+export const Sidebar = ({ setAction, onSave, grid, setGrid }: any) => {
   return (
     <div className="flex flex-column border rounded p-4">
       <Tooltip placement="top" title={"Create Shape"}>
@@ -22,6 +22,8 @@ export const Sidebar = ({ setAction, onSave }: any) => {
           onClick={() => onSave()}
         />
       </Tooltip>
+
+      <Switch checked={grid} onChange={setGrid} />
     </div>
   );
 };

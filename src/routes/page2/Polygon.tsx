@@ -3,7 +3,10 @@ import { Menu, Dropdown } from "antd";
 import { genPathString } from "../../utils";
 import { colors } from "../../colors";
 import * as R from "ramda";
+import { useSelector } from "react-redux";
+
 interface PolygonProps {
+  grpId: any;
   id: any;
   pts: any;
   color: any;
@@ -17,6 +20,7 @@ interface PolygonProps {
 
 export const Polygon = React.memo<PolygonProps>(
   ({
+    grpId,
     id,
     pts,
     color,
@@ -28,8 +32,6 @@ export const Polygon = React.memo<PolygonProps>(
     onRotate,
   }) => {
     const dPath = genPathString(pts, closed);
-
-    console.log("render polygon");
     const menu = (
       <Menu>
         <Menu.Item
@@ -55,7 +57,7 @@ export const Polygon = React.memo<PolygonProps>(
               <div
                 key={v}
                 style={{ backgroundColor: v, width: 20, height: 20 }}
-                onClick={() => setColor(id, v)}
+                onClick={() => setColor(grpId, v)}
               />
             ))}
           </div>
@@ -83,6 +85,12 @@ export const Polygon = React.memo<PolygonProps>(
             <circle key={idx} cx={pt[0]} cy={pt[1]} r={3} />
           ))}
       </>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      R.equals(prevProps.pts, nextProps.pts) &&
+      prevProps.color === nextProps.color
     );
   }
 );

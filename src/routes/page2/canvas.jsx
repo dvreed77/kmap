@@ -33,7 +33,7 @@ export const Canvas = ({
 
     const cursorPt = kGrid.qTree.find(mX, mY);
 
-    return onMouseMove(cursorPt);
+    return onMouseMove(kGrid, cursorPt);
   };
 
   const mouseClick = ({ clientX: x, clientY: y }) => {
