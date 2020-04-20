@@ -88,24 +88,23 @@ export const Canvas = ({
     clientX: number;
     clientY: number;
   }) => {
-    const node = svgRef.current;
+    if (action.action === "MOVE") {
+      setAction({ action: null, data: null });
+    } else if (action.action === "NEW") {
+      const node = svgRef.current;
 
-    if (node) {
-      const {
-        x: rX,
-        y: rY,
-        width: rW,
-        height: rH,
-      } = node.getBoundingClientRect();
+      if (node) {
+        const {
+          x: rX,
+          y: rY,
+          width: rW,
+          height: rH,
+        } = node.getBoundingClientRect();
 
-      const x = cX - rX - rW / 2 - padding;
-      const y = cY - rY - rH / 2 - padding;
+        const x = cX - rX - rW / 2;
+        const y = cY - rY - rH / 2;
 
-      console.log(x, y);
-
-      if (action.action === "MOVE") {
-        setAction({ action: null, data: null });
-      } else if (action.action === "NEW") {
+        console.log(x, y);
         if (clickedPoints.length) {
           const [x0, y0] = clickedPoints[0];
           const d = Math.sqrt(Math.pow(x0 - x, 2) + Math.pow(y0 - y, 2));
@@ -145,6 +144,7 @@ export const Canvas = ({
 
   return (
     <svg
+      style={{ userSelect: "none" }}
       ref={svgRef}
       width={width + 2 * padding}
       height={height + 2 * padding}

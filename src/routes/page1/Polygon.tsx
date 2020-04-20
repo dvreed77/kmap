@@ -4,6 +4,7 @@ import { genPathString } from "../../utils";
 // import { colors } from "../../colors";
 import * as R from "ramda";
 import { Matrix, applyToPoints } from "transformation-matrix";
+import { useHistory } from "react-router-dom";
 
 interface PolygonProps {
   // grpId: any;
@@ -47,6 +48,7 @@ export const Polygon = React.memo<PolygonProps>(
     // onDuplicate,
     // onRotate,
   }) => {
+    let history = useHistory();
     const dPath = genPathString(
       applyToPoints(tmat, pts) as [number, number][],
       true
@@ -107,6 +109,7 @@ export const Polygon = React.memo<PolygonProps>(
             fillOpacity={1}
             strokeWidth={3}
             strokeLinejoin="round"
+            onDoubleClick={() => history.push("/0")}
           />
         </Dropdown>
       </>
