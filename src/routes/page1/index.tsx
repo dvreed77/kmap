@@ -1,97 +1,125 @@
 import * as React from "react";
 import { KGrid } from "./generateGrid";
 import { shapes } from "./shapes";
-import {
-  scale,
-  rotate,
-  translate,
-  compose,
-  applyToPoints,
-} from "transformation-matrix";
-import { genPathString } from "../../utils";
+import { Canvas } from "./Canvas";
+import { useRouteMatch, Switch, Route, Link } from "react-router-dom";
+import { Sidebar } from "../page2/sidebar";
 
-type Polygon = {
-  dave: number;
+export type NPolygon = {
+  id: string;
+  color: string;
+  pts: [number, number][];
+  polys: NPolygon[];
 };
 
-const KGridContext = React.createContext<KGrid | null>(null);
-
-interface ICanvas {
-  bounds: [number, number][];
-}
-const Canvas = ({ bounds }: ICanvas) => {
-  const kGrid = React.useContext(KGridContext);
-
-  if (!kGrid) return <div></div>;
-
-  console.log(kGrid);
-  const padding = 10;
-  const { width, height, pts } = kGrid;
-
-  const dPath = genPathString(bounds, true);
-
-  return (
-    <svg
-      width={width + 2 * padding}
-      height={height + 2 * padding}
-      // onMouseMove={mouseMove}
-      // onClick={mouseClick}
-    >
-      <defs>
-        <clipPath id="clipPath">
-          <path d={dPath} />
-        </clipPath>
-      </defs>
-      <g
-        transform={`translate(${padding + width / 2}, ${padding + height / 2})`}
-        clipPath="url(#clipPath)"
-      >
-        {pts.map(([x, y], idx) => (
-          <circle
-            key={idx}
-            cx={x}
-            cy={y}
-            r={2}
-            className="text-gray-400 fill-current"
-          />
-        ))}
-
-        <path
-          d={dPath}
-          className="text-gray-300 stroke-current stroke-2"
-          fill="none"
-        />
-      </g>
-    </svg>
-  );
-};
+export const KGridContext = React.createContext<KGrid | null>(null);
 
 export const Page1 = () => {
   const [kGrid, setKGrid] = React.useState<KGrid | undefined>();
-  const [polygons, setPolygons] = React.useState<Polygon[]>([]);
+  const [polygons, setPolygons] = React.useState<NPolygon[]>([]);
+  const [action, setAction] = React.useState({ action: null, data: null });
+  const { path } = useRouteMatch();
+
+  const onSave = () => {
+    localStorage.setItem("myData", JSON.stringify(polygons));
+  };
+
+  const updatePolygon = () => {};
+
+  const addPolygon = (polygon: NPolygon) => {
+    console.log("adding", polygon);
+
+    setPolygons((polygons) => {
+      polygons.forEach((p) => {
+        if (p.id === "0") {
+          p.polys.push(polygon);
+        }
+      });
+
+      polygons.push(polygon);
+
+      return polygons;
+    });
+  };
+
   React.useEffect(() => {
-    const kGrid = new KGrid({ cols: 10, rows: 8 });
+    const kGrid = new KGrid({ cols: 12, rows: 10 });
     setKGrid(kGrid);
+
+    const d: NPolygon[] = shapes.map(({ color, kPts, id }) => ({
+      id,
+      color,
+      pts: kPts.map((kPt) => kGrid.kPtToPt0(kPt)),
+      polys: [],
+    }));
+    setPolygons(d);
+
+    // );
   }, []);
 
   if (!kGrid) {
     return <div></div>;
   }
 
-  console.log(kGrid);
+  const { width, height } = kGrid;
 
-  const { width, height, pts } = kGrid;
-
-  const bounds = [
+  const bounds: [number, number][] = [
     [-width / 2, -height / 2],
     [width / 2, -height / 2],
     [width / 2, height / 2],
     [-width / 2, height / 2],
   ];
 
+  console.log("Action", action, polygons);
+
   return (
     <KGridContext.Provider value={kGrid}>
-      <Canvas bounds={bounds} />
+      <Link to="/">About</Link>
+
+      <div className="w-10/12 flex items-center justify-center">
+        <Switch>
+          <Route exact path={path}>
+            <Canvas
+              width={1000}
+              boundingPolygon={bounds}
+              polygons={polygons}
+              addPolygon={() => console.log("add")}
+              setAction={setAction}
+              action={action}
+            />
+          </Route>
+          <Route
+            path={`${path}:id`}
+            render={({ match }) => {
+              const {
+                params: { id },
+              } = match;
+              const polygon = polygons.find((d) => d.id === id);
+
+              if (!polygon) return <div>No polygon</div>;
+
+              return (
+                <Canvas
+                  width={500}
+                  boundingPolygon={polygon.pts}
+                  polygons={polygon.polys}
+                  addPolygon={addPolygon}
+                  setAction={setAction}
+                  action={action}
+                />
+              );
+            }}
+          />
+        </Switch>
+      </div>
+      <div className="w-2/12 flex items-center justify-center">
+        <Sidebar
+          setAction={setAction}
+          onSave={onSave}
+          // grid={grid}
+          // setGrid={setGrid}
+        />
+      </div>
     </KGridContext.Provider>
   );
 };

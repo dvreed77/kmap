@@ -92,7 +92,7 @@ export class KGrid {
       const b = isOdd(j) ? (1 - j) / 2 + i : i - j / 2;
 
       for (let d = 0; d < 6; d++) {
-        const [x, y] = this.kPtToPt0({ a, b, c, d });
+        const [x, y] = this.kPtToPt0([a, b, c, d]);
 
         this.pts.push([x, y]);
 
@@ -117,7 +117,7 @@ export class KGrid {
     return this.qTree.find(x, y);
   }
 
-  kPtToPt0({ a, b, c, d }: { a: number; b: number; c: number; d: number }) {
+  kPtToPt0([a, b, c, d]: number[]): [number, number] {
     const j = c;
     const i = isOdd(j) ? a - (j + 1) / 2 : a - j / 2;
     const { hexWidth, F, G, H } = this.hexDims;
