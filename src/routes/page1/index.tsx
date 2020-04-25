@@ -30,11 +30,11 @@ export const Page1 = () => {
     console.log("adding", polygon);
 
     setPolygons((polygons) => {
-      polygons.forEach((p) => {
-        if (p.id === "0") {
-          p.polys.push(polygon);
-        }
-      });
+      // polygons.forEach((p) => {
+      //   if (p.id === "0") {
+      //     p.polys.push(polygon);
+      //   }
+      // });
 
       polygons.push(polygon);
 
@@ -74,16 +74,14 @@ export const Page1 = () => {
 
   return (
     <KGridContext.Provider value={kGrid}>
-      <Link to="/">About</Link>
-
       <div className="w-10/12 flex items-center justify-center">
         <Switch>
           <Route exact path={path}>
             <Canvas
-              width={1000}
+              width={800}
               boundingPolygon={bounds}
               polygons={polygons}
-              addPolygon={() => console.log("add")}
+              addPolygon={addPolygon}
               setAction={setAction}
               action={action}
             />

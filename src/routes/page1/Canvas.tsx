@@ -8,6 +8,7 @@ import {
   compose,
   applyToPoints,
   inverse,
+  applyToPoint,
 } from "transformation-matrix";
 import { genPathString, getBounds } from "../../utils";
 import { KGridContext, NPolygon } from ".";
@@ -52,33 +53,9 @@ export const Canvas = ({
         height: rH,
       } = node.getBoundingClientRect();
 
-      const x = cX - rX - rW / 2 - padding;
-      const y = cY - rY - rH / 2 - padding;
-
-      // if (pt === clickedPoints[0]) {
-      // const id = Math.random().toString(36).slice(2);
-      // setPolygons(
-      //   (polygons) =>
-      //     [
-      //       ...polygons,
-      //       {
-      //         grpId: id,
-      //         id,
-      //         kPts: clickedPoints,
-      //         color: "green",
-      //       },
-      //     ] as any
-      // );
-      // setClickedPoints([]);
-      // setAction({ action: null, data: null });
-      // } else {
-
-      // }
+      const x = cX - rX - rW / 2;
+      const y = cY - rY - rH / 2;
     }
-
-    // const mY = cY - rY - dims.height / 2 - padding;
-    // const cursorPt = kGrid.qTree.find(mX, mY);
-    // return onMouseMove(kGrid, cursorPt);
   };
 
   const onMouseClick = ({
@@ -101,10 +78,15 @@ export const Canvas = ({
           height: rH,
         } = node.getBoundingClientRect();
 
-        const x = cX - rX - rW / 2;
-        const y = cY - rY - rH / 2;
+        const xe = cX - rX - rW / 2;
+        const ye = cY - rY - rH / 2;
 
-        console.log(x, y);
+        // console.log(x, y, );
+        const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
+        const [x0, y0] = kGrid.pt0ToKPt([x0e, y0e]);
+
+        const [x, y] = applyToPoint(tmat, [x0, y0]);
+
         if (clickedPoints.length) {
           const [x0, y0] = clickedPoints[0];
           const d = Math.sqrt(Math.pow(x0 - x, 2) + Math.pow(y0 - y, 2));
@@ -142,13 +124,14 @@ export const Canvas = ({
 
   const dPath = genPathString(bounds2, true);
 
+  console.log(polygons);
   return (
     <svg
       style={{ userSelect: "none" }}
       ref={svgRef}
       width={width + 2 * padding}
       height={height + 2 * padding}
-      // onMouseMove={mouseMove}
+      onMouseMove={mouseMove}
       onClick={onMouseClick}
     >
       <defs>
@@ -165,13 +148,17 @@ export const Canvas = ({
             key={idx}
             cx={x}
             cy={y}
-            r={Math.min(2 * s, 4)}
+            r={Math.min(2 * s, 2)}
             className="text-gray-400 fill-current"
           />
         ))}
 
         {polygons.map(({ id, color, pts }) => (
           <Polygon key={id} id={id} color={color} pts={pts} tmat={tmat} />
+        ))}
+
+        {clickedPoints.map(([x, y], idx) => (
+          <circle cx={x} cy={y} r={2} />
         ))}
 
         <path

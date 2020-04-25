@@ -114,7 +114,9 @@ export class KGrid {
   }
 
   pt0ToKPt([x, y]: [number, number]) {
-    return this.qTree.find(x, y);
+    const r = this.qTree.find(x, y);
+    const { x: x0, y: y0 } = r;
+    return [x0, y0];
   }
 
   kPtToPt0([a, b, c, d]: number[]): [number, number] {
