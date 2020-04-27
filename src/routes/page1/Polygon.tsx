@@ -1,23 +1,17 @@
 import * as React from "react";
 import { Menu, Dropdown } from "antd";
 import { genPathString } from "../../utils";
-// import { colors } from "../../colors";
 import * as R from "ramda";
-import { Matrix, applyToPoints } from "transformation-matrix";
+import { Matrix, applyToPoints, compose, toSVG } from "transformation-matrix";
 import { useHistory } from "react-router-dom";
+import { AppContext } from ".";
+import { NPolygon } from "./types";
 
 interface PolygonProps {
-  // grpId: any;
-  id: any;
-  pts: any;
-  color: any;
-  tmat: Matrix;
-  // closed: any;
-  // setState: any;
-  // onDelete?: any;
-  // setColor?: any;
-  // onDuplicate?: any;
-  // onRotate?: any;
+  refId: string;
+  id: string;
+  transMat: Matrix;
+  isClickable: boolean;
 }
 
 const colors = {
@@ -34,48 +28,121 @@ const colors = {
   E: "#F2C2C2",
 };
 
-export const Polygon = React.memo<PolygonProps>(
+export const ClickablePolygon = React.memo(
   ({
-    // grpId,
     id,
+    transMat,
     pts,
     color,
-    tmat,
-    // closed,
-    // setState,
-    // onDelete,
-    // setColor,
-    // onDuplicate,
-    // onRotate,
+    setState,
+    setActive,
+    duplicatePolygon,
+    deletePolygon,
+  }: {
+    id: string;
+    transMat: Matrix;
+    pts: Point[];
+    color: string;
+    setState: any;
+    setActive: any;
+    duplicatePolygon: any;
+    deletePolygon: any;
   }) => {
-    let history = useHistory();
-    const dPath = genPathString(
-      applyToPoints(tmat, pts) as [number, number][],
-      true
+    // console.log("render polygon", id, pts);
+    const dPath = genPathString(pts, true);
+
+    const menu = (
+      <Menu>
+        <Menu.Item
+          key="move"
+          onClick={() => {
+            setState("MOVE");
+            setActive(id);
+          }}
+        >
+          move
+        </Menu.Item>
+        <Menu.Item
+          key="duplicate"
+          onClick={() => {
+            setActive(id);
+            duplicatePolygon(id);
+          }}
+        >
+          duplicate
+        </Menu.Item>
+        <Menu.Item
+          key="delete"
+          onClick={() => {
+            deletePolygon(id);
+          }}
+        >
+          delete
+        </Menu.Item>
+      </Menu>
     );
+
+    return (
+      <Dropdown overlay={menu} trigger={["contextMenu"]}>
+        <g transform={`${toSVG(transMat)}`}>
+          <path
+            d={dPath}
+            stroke="black"
+            fill={color}
+            vectorEffect="non-scaling-stroke"
+            fillOpacity={1}
+            strokeWidth={3}
+            strokeLinejoin="round"
+          />
+        </g>
+      </Dropdown>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      R.equals(prevProps.transMat, nextProps.transMat) &&
+      R.equals(prevProps.pts, nextProps.pts) &&
+      prevProps.color === nextProps.color
+    );
+  }
+);
+
+export const Polygon = React.memo<PolygonProps>(
+  ({ refId, id, transMat, isClickable }) => {
+    const {
+      polygons,
+      deletePolygon,
+      rotatePolygon,
+      setState,
+      setActive,
+    } = React.useContext(AppContext);
+
+    const polygon = polygons.find((d: NPolygon) => d.id === refId) as NPolygon;
+
     const menu = (
       <Menu>
         <Menu.Item
           key="1"
-          // onClick={
-          // () =>
-          // setState({
-          //   action: "MOVE",
-          //   data: { id },
-          // })
-          // }
+          onClick={() => {
+            setState("MOVE");
+            setActive(id);
+          }}
         >
           move
         </Menu.Item>
         <Menu.Item
           key="2"
-          // onClick={() => onDuplicate(id)}
+          onClick={() => {
+            deletePolygon();
+          }}
         >
           duplicate
         </Menu.Item>
         <Menu.Item
           key="3"
-          // onClick={() => onDelete(id)}
+          onClick={() => {
+            deletePolygon();
+          }}
         >
           delete
         </Menu.Item>
@@ -90,10 +157,7 @@ export const Polygon = React.memo<PolygonProps>(
             ))}
           </div>
         </Menu.SubMenu>
-        <Menu.Item
-          key="rotate"
-          // onClick={() => onRotate(id)}
-        >
+        <Menu.Item key="rotate" onClick={() => rotatePolygon(id)}>
           rotate
         </Menu.Item>
       </Menu>
@@ -101,24 +165,32 @@ export const Polygon = React.memo<PolygonProps>(
 
     return (
       <>
-        <Dropdown overlay={menu} trigger={["contextMenu"]}>
-          <path
-            d={dPath}
-            stroke="black"
-            fill={color}
-            fillOpacity={1}
-            strokeWidth={3}
-            strokeLinejoin="round"
-            onDoubleClick={() => history.push("/0")}
+        {polygon.pts && (
+          <PolygonBoundary
+            pts={polygon.pts}
+            color={polygon.color}
+            transMat={transMat}
           />
-        </Dropdown>
+        )}
+        {polygon.children.map(({ id: refId, transMat: t2 }, idx) => (
+          <Polygon
+            key={idx}
+            refId={refId}
+            id={`${id}.${refId}.${idx}`}
+            transMat={compose(transMat, t2)}
+            isClickable={false}
+          />
+        ))}
       </>
     );
   },
   (prevProps, nextProps) => {
+    // console.log(R.equals(prevProps.refId, nextProps.refId));
+    // console.log(R.equals(prevProps.transMat, nextProps.transMat));
     return (
-      R.equals(prevProps.pts, nextProps.pts) &&
-      prevProps.color === nextProps.color
+      R.equals(prevProps.transMat, nextProps.transMat) &&
+      prevProps.refId === nextProps.refId &&
+      prevProps.id === nextProps.id
     );
   }
 );
