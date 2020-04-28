@@ -38,6 +38,8 @@ export const ClickablePolygon = React.memo(
     setActive,
     duplicatePolygon,
     deletePolygon,
+    rotatePolygon,
+    children,
   }: {
     id: string;
     transMat: Matrix;
@@ -47,8 +49,10 @@ export const ClickablePolygon = React.memo(
     setActive: any;
     duplicatePolygon: any;
     deletePolygon: any;
+    rotatePolygon: any;
+    children: any;
   }) => {
-    // console.log("render polygon", id, pts);
+    const history = useHistory();
     const dPath = genPathString(pts, true);
 
     const menu = (
@@ -79,6 +83,23 @@ export const ClickablePolygon = React.memo(
         >
           delete
         </Menu.Item>
+        <Menu.Item
+          key="rotate"
+          onClick={() => {
+            rotatePolygon(id);
+          }}
+        >
+          rotate
+        </Menu.Item>
+        <Menu.Item
+          key="enter"
+          onClick={() => {
+            console.log("id", id);
+            history.push(`/page1/shape5`);
+          }}
+        >
+          enter
+        </Menu.Item>
       </Menu>
     );
 
@@ -94,6 +115,31 @@ export const ClickablePolygon = React.memo(
             strokeWidth={3}
             strokeLinejoin="round"
           />
+
+          {children.map(
+            (
+              {
+                transMat,
+                pts,
+                color,
+                children,
+              }: {
+                transMat: any;
+                pts: any;
+                color: any;
+                children: any;
+              },
+              idx: number
+            ) => (
+              <Polygon
+                key={idx}
+                transMat={transMat}
+                pts={pts}
+                color={color}
+                children={children}
+              />
+            )
+          )}
         </g>
       </Dropdown>
     );
@@ -107,90 +153,62 @@ export const ClickablePolygon = React.memo(
   }
 );
 
-export const Polygon = React.memo<PolygonProps>(
-  ({ refId, id, transMat, isClickable }) => {
-    const {
-      polygons,
-      deletePolygon,
-      rotatePolygon,
-      setState,
-      setActive,
-    } = React.useContext(AppContext);
-
-    const polygon = polygons.find((d: NPolygon) => d.id === refId) as NPolygon;
-
-    const menu = (
-      <Menu>
-        <Menu.Item
-          key="1"
-          onClick={() => {
-            setState("MOVE");
-            setActive(id);
-          }}
-        >
-          move
-        </Menu.Item>
-        <Menu.Item
-          key="2"
-          onClick={() => {
-            deletePolygon();
-          }}
-        >
-          duplicate
-        </Menu.Item>
-        <Menu.Item
-          key="3"
-          onClick={() => {
-            deletePolygon();
-          }}
-        >
-          delete
-        </Menu.Item>
-        <Menu.SubMenu title="color">
-          <div className="flex flex-row flex-wrap" style={{ width: 100 }}>
-            {R.values(colors).map((v) => (
-              <div
-                key={v}
-                style={{ backgroundColor: v, width: 20, height: 20 }}
-                // onClick={() => setColor(grpId, v)}
-              />
-            ))}
-          </div>
-        </Menu.SubMenu>
-        <Menu.Item key="rotate" onClick={() => rotatePolygon(id)}>
-          rotate
-        </Menu.Item>
-      </Menu>
-    );
+export const Polygon = React.memo(
+  ({
+    transMat,
+    pts,
+    color,
+    children,
+  }: {
+    transMat: any;
+    pts: any;
+    color: any;
+    children: any;
+  }) => {
+    const dPath = genPathString(pts, true);
 
     return (
-      <>
-        {polygon.pts && (
-          <PolygonBoundary
-            pts={polygon.pts}
-            color={polygon.color}
-            transMat={transMat}
-          />
+      <g transform={`${toSVG(transMat)}`}>
+        <path
+          d={dPath}
+          stroke="black"
+          fill={color}
+          vectorEffect="non-scaling-stroke"
+          fillOpacity={1}
+          strokeWidth={3}
+          strokeLinejoin="round"
+        />
+        {children.map(
+          (
+            {
+              transMat,
+              pts,
+              color,
+              children,
+            }: {
+              transMat: any;
+              pts: any;
+              color: any;
+              children: any;
+            },
+            idx: number
+          ) => (
+            <Polygon
+              key={idx}
+              transMat={transMat}
+              pts={pts}
+              color={color}
+              children={children}
+            />
+          )
         )}
-        {polygon.children.map(({ id: refId, transMat: t2 }, idx) => (
-          <Polygon
-            key={idx}
-            refId={refId}
-            id={`${id}.${refId}.${idx}`}
-            transMat={compose(transMat, t2)}
-            isClickable={false}
-          />
-        ))}
-      </>
+      </g>
     );
   },
   (prevProps, nextProps) => {
-    // console.log(R.equals(prevProps.refId, nextProps.refId));
-    // console.log(R.equals(prevProps.transMat, nextProps.transMat));
     return (
       R.equals(prevProps.transMat, nextProps.transMat) &&
-      prevProps.refId === nextProps.refId &&
-      prevProps.id === nextProps.id
+      prevProps.pts === nextProps.pts
     );
   }
 );

@@ -58,7 +58,7 @@ const shape4 = {
 
 const shape5 = {
   id: "shape5",
-  color: "red",
+  color: "blue",
   kPts: [
     [1, 1, 0, 0],
     [0, 1, -1, 0],
@@ -67,7 +67,11 @@ const shape5 = {
     [0, -1, 1, 0],
     [1, 0, 1, 0],
   ],
-  children: [],
+  children: [
+    { id: "shape3", transMat: identity() },
+    { id: "shape3", transMat: rotate((2 * Math.PI) / 3) },
+    { id: "shape3", transMat: rotate((4 * Math.PI) / 3) },
+  ],
   // children: [
   //   { id: "shape3", transMat: identity() },
   //   { id: "shape3", transMat: rotate(Math.PI / 3) },

@@ -32,26 +32,6 @@ export const Page1 = () => {
   const [active, setActive] = React.useState<String | null>();
   const { path } = useRouteMatch();
 
-  const onSave = () => {
-    localStorage.setItem("myData", JSON.stringify(polygons));
-  };
-
-  const addPolygon = (polygon: NPolygon) => {
-    console.log("adding", polygon);
-
-    setPolygons((polygons) => {
-      // polygons.forEach((p) => {
-      //   if (p.id === "0") {
-      //     p.polys.push(polygon);
-      //   }
-      // });
-
-      polygons.push(polygon);
-
-      return polygons;
-    });
-  };
-
   React.useEffect(() => {
     const kGrid = new KGrid({ cols: 12, rows: 10 });
     setKGrid(kGrid);
@@ -67,10 +47,30 @@ export const Page1 = () => {
       })
     );
 
-    setPolygons(polygons);
+    const polygons2 = polygons.map((polygon) => {
+      polygon.children = polygon.children.map(({ id, transMat }, idx) => {
+        const polygon = polygons.find((d: NPolygon) => d.id === id) as NPolygon;
+
+        console.log(polygon);
+        return {
+          ...polygon,
+          // id: `${id}.${idx}`,
+          transMat,
+        };
+      });
+      return polygon;
+    });
+
+    // console.log(polygons2);
+
+    setPolygons(polygons2);
 
     // );
   }, []);
+
+  const onSave = () => {
+    localStorage.setItem("myData", JSON.stringify(polygons));
+  };
 
   if (!kGrid) {
     return <div></div>;
@@ -111,12 +111,16 @@ export const Page1 = () => {
   };
 
   const rotatePolygon = (id: string) => {
+    const path = id.split(".");
+    const shapeId = path[0];
+    const childPath = parseInt(path[1]);
+
     const polygonLens = R.compose(
-      lensById("shapeB"),
-      R.lensPath(["children", 0])
+      lensById(shapeId),
+      R.lensPath(["children", childPath])
     ) as R.Lens;
 
-    setPolygons(R.over(polygonLens, rotatePolygon2, polygons));
+    setPolygons((polygons) => R.over(polygonLens, rotatePolygon2, polygons));
   };
 
   const duplicatePolygon = (id: string) => {
@@ -159,6 +163,45 @@ export const Page1 = () => {
     );
   };
 
+  const addPolygon = (shapeId: string, pts: any) => {
+    const id = Math.random().toString(36).slice(2);
+    const newPolygon = {
+      id,
+      pts,
+      color: "green",
+      transMat: identity(),
+      children: [],
+    };
+
+    const polygonLens = R.compose(
+      lensById(shapeId),
+      R.lensProp("children")
+    ) as R.Lens;
+
+    setPolygons((polygons) => {
+      const pa = R.append(newPolygon, polygons);
+      const p1 = R.over(polygonLens, R.append(newPolygon), pa);
+
+      const polygons2 = p1.map((polygon) => {
+        polygon.children = polygon.children.map(({ id, transMat }, idx) => {
+          const polygon = p1.find((d: NPolygon) => d.id === id) as NPolygon;
+
+          console.log(polygon);
+
+          return {
+            ...polygon,
+            transMat,
+          };
+        });
+        return polygon;
+      });
+
+      console.log(p1, polygons);
+
+      return p1;
+    });
+  };
+
   return (
     <div className="flex flex-row">
       <div className="w-10/12 flex items-center justify-center">
@@ -176,26 +219,40 @@ export const Page1 = () => {
               movePolygon={movePolygon}
               duplicatePolygon={duplicatePolygon}
               deletePolygon={deletePolygon}
+              rotatePolygon={rotatePolygon}
+              addPolygon={addPolygon}
             />
           </Route>
-          {/* <Route
-            path={`${path}:id`}
+          <Route
+            path={`${path}/:id`}
             render={({ match }) => {
               const {
                 params: { id },
               } = match;
-              const polygon = polygons.find((d) => d.id === id);
-
-              if (!polygon) return <div>No polygon</div>;
-
-              return <Canvas width={800} shapeId={id} />;
+              return (
+                <Canvas
+                  width={800}
+                  shapeId={id}
+                  polygons={polygons}
+                  kGrid={kGrid}
+                  state={state}
+                  setState={setState}
+                  active={active}
+                  setActive={setActive}
+                  movePolygon={movePolygon}
+                  duplicatePolygon={duplicatePolygon}
+                  deletePolygon={deletePolygon}
+                  rotatePolygon={rotatePolygon}
+                  addPolygon={addPolygon}
+                />
+              );
             }}
-          /> */}
+          />
         </Switch>
       </div>
       <div className="w-2/12 flex items-center justify-center">
         <Sidebar
-          setAction={setAction}
+          setState={setState}
           onSave={onSave}
           // grid={grid}
           // setGrid={setGrid}

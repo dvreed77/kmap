@@ -12,7 +12,7 @@ function App() {
       <Header />
       <div className="w-10/12 mx-auto flex flex-row">
         <Switch>
-          <Route path="/" component={Page1} />
+          <Route path="/page1" component={Page1} />
         </Switch>
       </div>
     </Router>

@@ -29,6 +29,8 @@ interface ICanvas {
   movePolygon: any;
   duplicatePolygon: any;
   deletePolygon: any;
+  rotatePolygon: any;
+  addPolygon: any;
 }
 
 export const Canvas = React.memo(
@@ -44,23 +46,15 @@ export const Canvas = React.memo(
     movePolygon,
     duplicatePolygon,
     deletePolygon,
+    rotatePolygon,
+    addPolygon,
   }: ICanvas) => {
     const svgRef = React.useRef<SVGSVGElement>(null);
     const [clickedPoints, setClickedPoints] = React.useState([]);
 
-    console.log("render canvas");
     const polygon = polygons.find(
       (d: NPolygon) => d.id === shapeId
     ) as NPolygon;
-
-    polygon.children = polygon.children.map(({ id, transMat }, idx) => {
-      const polygon = polygons.find((d: NPolygon) => d.id === id) as NPolygon;
-      return {
-        ...polygon,
-        // id: `${id}.${idx}`,
-        transMat,
-      };
-    });
 
     if (!kGrid) return <div></div>;
 
@@ -98,43 +92,43 @@ export const Canvas = React.memo(
     }) => {
       if (state === "MOVE") {
         setState(null);
+      } else if (state === "NEW") {
+        const node = svgRef.current;
+        if (node) {
+          const {
+            x: rX,
+            y: rY,
+            width: rW,
+            height: rH,
+          } = node.getBoundingClientRect();
+          const xe = cX - rX - rW / 2;
+          const ye = cY - rY - rH / 2;
+          const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
+          const [x0, y0] = kGrid.pt0ToKPt([x0e, y0e]);
+          const [x, y] = applyToPoint(tmat, [x0, y0]);
+          console.log(clickedPoints);
+          if (clickedPoints.length) {
+            const [x0, y0] = clickedPoints[0];
+            const d = Math.sqrt(Math.pow(x0 - x, 2) + Math.pow(y0 - y, 2));
+            if (d < 3) {
+              console.log("Adding");
+              const id = Math.random().toString(36).slice(2);
+              // const polygon = {
+              //   id,
+              //   pts: applyToPoints(inverse(tmat), clickedPoints),
+              //   color: "green",
+              // };
+              setState(null);
+              setClickedPoints([]);
+              addPolygon(shapeId, applyToPoints(inverse(tmat), clickedPoints));
+            } else {
+              setClickedPoints((pts: any) => [...pts, [x, y]] as any);
+            }
+          } else {
+            setClickedPoints((pts: any) => [...pts, [x, y]] as any);
+          }
+        }
       }
-      // else if (action.action === "NEW") {
-      //   const node = svgRef.current;
-      //   if (node) {
-      //     const {
-      //       x: rX,
-      //       y: rY,
-      //       width: rW,
-      //       height: rH,
-      //     } = node.getBoundingClientRect();
-      //     const xe = cX - rX - rW / 2;
-      //     const ye = cY - rY - rH / 2;
-      //     // console.log(x, y, );
-      //     const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
-      //     const [x0, y0] = kGrid.pt0ToKPt([x0e, y0e]);
-      //     const [x, y] = applyToPoint(tmat, [x0, y0]);
-      //     if (clickedPoints.length) {
-      //       const [x0, y0] = clickedPoints[0];
-      //       const d = Math.sqrt(Math.pow(x0 - x, 2) + Math.pow(y0 - y, 2));
-      //       if (d < 3) {
-      //         const id = Math.random().toString(36).slice(2);
-      //         const polygon = {
-      //           grpId: id,
-      //           id,
-      //           pts: applyToPoints(inverse(tmat), clickedPoints),
-      //           color: "green",
-      //         };
-      //         addPolygon(polygon);
-      //         setClickedPoints([]);
-      //       } else {
-      //         setClickedPoints((pts: any) => [...pts, [x, y]] as any);
-      //       }
-      //     } else {
-      //       setClickedPoints((pts: any) => [...pts, [x, y]] as any);
-      //     }
-      //   }
-      // }
     };
 
     const { width: bWidth, height: bHeight } = getBounds(polygon.pts);
@@ -171,6 +165,24 @@ export const Canvas = React.memo(
           })`}
           clipPath="url(#clipPath)"
         >
+          {polygon.children.map(
+            ({ id: refId, transMat, pts, color, children }, idx) => (
+              <ClickablePolygon
+                key={idx}
+                id={`${shapeId}.${idx}.${refId}`}
+                transMat={compose(tmat, transMat)}
+                pts={pts}
+                color={color}
+                setState={setState}
+                setActive={setActive}
+                duplicatePolygon={duplicatePolygon}
+                deletePolygon={deletePolygon}
+                rotatePolygon={rotatePolygon}
+                children={children}
+              />
+            )
+          )}
+
           {pts2.map(([x, y], idx) => (
             <circle
               key={idx}
@@ -181,22 +193,8 @@ export const Canvas = React.memo(
             />
           ))}
 
-          {polygon.children.map(({ id: refId, transMat, pts, color }, idx) => (
-            <ClickablePolygon
-              key={idx}
-              id={`${shapeId}.${idx}.${refId}`}
-              transMat={compose(tmat, transMat)}
-              pts={pts}
-              color={color}
-              setState={setState}
-              setActive={setActive}
-              duplicatePolygon={duplicatePolygon}
-              deletePolygon={deletePolygon}
-            />
-          ))}
-
           {clickedPoints.map(([x, y], idx) => (
-            <circle cx={x} cy={y} r={2} />
+            <circle key={idx} cx={x} cy={y} r={5} fill="red" />
           ))}
 
           <path
@@ -212,7 +210,8 @@ export const Canvas = React.memo(
     return (
       R.equals(prevProps.polygons, nextProps.polygons) &&
       prevProps.state === nextProps.state &&
-      prevProps.active === nextProps.active
+      prevProps.active === nextProps.active &&
+      prevProps.shapeId === nextProps.shapeId
     );
   }
 );
