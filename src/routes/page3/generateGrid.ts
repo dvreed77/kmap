@@ -44,6 +44,7 @@ export class KGrid {
   width: number;
   height: number;
   qTree: any;
+  qTree2: any;
   hexDims: {
     hexWidth: number;
     F: number;
@@ -69,6 +70,10 @@ export class KGrid {
       .x((d: any) => d.x)
       .y((d: any) => d.y);
 
+    this.qTree2 = quadtree()
+      .x((d: any) => d.x)
+      .y((d: any) => d.y);
+
     const hexWidth = this.width / this.cols;
 
     const G = hexWidth / 2;
@@ -83,6 +88,7 @@ export class KGrid {
     };
     this.height = this.rows * (F + H);
 
+    const centerPts = [];
     const gridPoints = [];
 
     for (const [id, i, j] of GridGenerator(this.cols, this.rows)) {
@@ -90,6 +96,17 @@ export class KGrid {
       // Page 54 in notes
       const a = isOdd(j) ? (j + 1) / 2 + i : j / 2 + i;
       const b = isOdd(j) ? (1 - j) / 2 + i : i - j / 2;
+
+      const [x0, y0] = this.kPtToPt0([a, b, c, 0]);
+      centerPts.push({
+        i,
+        j,
+        a,
+        b,
+        c,
+        x: x0,
+        y: y0,
+      });
 
       for (let d = 0; d < 6; d++) {
         const [x, y] = this.kPtToPt0([a, b, c, d]);
@@ -111,10 +128,17 @@ export class KGrid {
     }
 
     this.qTree.addAll(gridPoints);
+    this.qTree2.addAll(centerPts);
   }
 
   pt0ToKPt([x, y]: [number, number]) {
     const r = this.qTree.find(x, y);
+    const { x: x0, y: y0 } = r;
+    return [x0, y0];
+  }
+
+  pt0ToKPtCenter([x, y]: [number, number]) {
+    const r = this.qTree2.find(x, y);
     const { x: x0, y: y0 } = r;
     return [x0, y0];
   }

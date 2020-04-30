@@ -9,8 +9,8 @@ export function Page3() {
   const { path } = useRouteMatch();
   return (
     <StoreProvider store={store}>
-      <div className="flex flex-row">
-        <div className="w-10/12 flex items-center justify-center">
+      <div className="flex flex-row w-full">
+        <div className="flex flex-grow items-center justify-center">
           <Route
             path={`${path}/:id?`}
             render={({ match }) => {
@@ -18,7 +18,7 @@ export function Page3() {
                 params: { id },
               } = match;
               console.log(match, id);
-              return <Canvas width={800} shapeId={id ? id : "shapeB"} />;
+              return <Canvas width={1000} shapeId={id ? id : "shapeB"} />;
             }}
           />
         </div>

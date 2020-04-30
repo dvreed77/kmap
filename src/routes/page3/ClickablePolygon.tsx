@@ -2,7 +2,14 @@ import * as React from "react";
 import { Menu, Dropdown } from "antd";
 import { genPathString } from "../../utils";
 import * as R from "ramda";
-import { Matrix, applyToPoints, compose, toSVG } from "transformation-matrix";
+import {
+  Matrix,
+  applyToPoints,
+  compose,
+  toSVG,
+  translate,
+  rotate,
+} from "transformation-matrix";
 import { useHistory } from "react-router-dom";
 import { NPolygon, PInstance, PMaster } from "./types";
 import { useStoreState, useStoreActions } from "./store";
@@ -14,6 +21,8 @@ export const ClickablePolygon = React.memo(
     const polygonInstance = useStoreState((state) =>
       state.polygons.instances.find((d) => d.instanceId === id)
     ) as PInstance;
+
+    console.log(polygonInstance);
 
     const polygonMaster = useStoreState((state) =>
       state.polygons.masters.find((d) => d.id === polygonInstance.masterId)
@@ -31,6 +40,8 @@ export const ClickablePolygon = React.memo(
     const duplicatePolygon = useStoreActions(
       (actions) => actions.polygons.duplicate
     );
+
+    const rotatePolygon = useStoreActions((actions) => actions.polygons.rotate);
 
     const deletePolygon = useStoreActions((actions) => actions.polygons.delete);
 
@@ -92,7 +103,7 @@ export const ClickablePolygon = React.memo(
           key="rotate"
           onClick={() => {
             console.log("rotate");
-            // rotatePolygon(id);
+            rotatePolygon({ id });
           }}
         >
           rotate
@@ -111,7 +122,14 @@ export const ClickablePolygon = React.memo(
 
     return (
       <Dropdown overlay={menu} trigger={["contextMenu"]}>
-        <g transform={`${toSVG(polygonInstance.transMat)}`}>
+        <g
+          transform={toSVG(
+            compose(
+              translate(...polygonInstance.translate),
+              rotate(polygonInstance.rotate)
+            )
+          )}
+        >
           <path
             d={dPath}
             stroke="black"

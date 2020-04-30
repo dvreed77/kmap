@@ -18,6 +18,8 @@ export type NPolygon = {
 export interface PInstance {
   instanceId: string;
   masterId: string;
+  translate: Point;
+  rotate: number;
   transMat: Matrix;
 }
 

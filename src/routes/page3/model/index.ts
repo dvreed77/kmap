@@ -1,7 +1,7 @@
 import polygons, { PolygonsModel, kGrid } from "./polygons";
 import cursor, { CursorModel } from "./cursor";
 import { KGrid } from "../generateGrid";
-import { Action, action } from "easy-peasy";
+import { Action, action, persist } from "easy-peasy";
 
 export interface StoreModel {
   polygons: PolygonsModel;
@@ -16,7 +16,7 @@ export interface StoreModel {
 }
 
 const model: StoreModel = {
-  polygons,
+  polygons: persist(polygons, { storage: "localStorage" }),
   kGrid,
   cursor,
   state: null,
@@ -33,6 +33,9 @@ const model: StoreModel = {
   setShowGrid: action((state, payload) => {
     state.showGrid = payload;
   }),
+  // save: action((state, payload) => {
+
+  // })
 };
 
 export default model;

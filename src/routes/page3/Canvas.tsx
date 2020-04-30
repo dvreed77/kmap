@@ -6,6 +6,8 @@ import {
   applyToPoint,
   inverse,
   toSVG,
+  compose,
+  translate,
 } from "transformation-matrix";
 import { useStoreState, useStoreActions } from "./store";
 import { ClickablePolygon } from "./ClickablePolygon";
@@ -57,7 +59,7 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
         const xe = cX - rX - rW / 2;
         const ye = cY - rY - rH / 2;
         const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
-        const [x0, y0] = kGrid.pt0ToKPt([x0e, y0e]);
+        const [x0, y0] = kGrid.pt0ToKPtCenter([x0e, y0e]);
         movePolygon({ id: activePolygon, position: [x0, y0] });
       }
     }
@@ -94,11 +96,21 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
           if (d < 3) {
             console.log("Adding");
 
+            const {
+              center: [cX, cY],
+            } = getBounds(clickedPoints);
+            const [cX0, cY0] = applyToPoint(inverse(tmat), [cX, cY]);
+            const [aX0, aY0] = kGrid.pt0ToKPtCenter([cX0, cY0]);
+            // const [aX, aY] = applyToPoint(tmat, [aX0, aY0]);
+
+            // console.log("ANCHOR", aX, aY);
+
             updateState(null);
             setClickedPoints([]);
             addPolygon({
               parentId: shapeId,
               pts: applyToPoints(inverse(tmat), clickedPoints),
+              anchorPt: [aX0, aY0],
             });
             // addPolygon(shapeId, applyToPoints(inverse(tmat), clickedPoints));
           } else {
@@ -111,7 +123,7 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
     }
   };
 
-  const { width: bWidth, height: bHeight } = getBounds(polygon.pts);
+  const { width: bWidth, height: bHeight, center } = getBounds(polygon.pts);
 
   const padding = 10;
   const { width: gridWidth, height: gridHeight, pts } = kGrid;
@@ -119,9 +131,11 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
   const s = width / bWidth;
   const height = s * bHeight;
 
-  const tmat = scale(s);
+  const tmat = compose(scale(s), translate(-center[0], -center[1]));
   const pts2 = applyToPoints(tmat, pts);
   const bounds2 = applyToPoints(tmat, polygon.pts) as [number, number][];
+
+  console.log(bWidth, bHeight, toSVG(tmat));
 
   const dPath = genPathString(bounds2, true);
 

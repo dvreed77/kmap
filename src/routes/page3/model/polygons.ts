@@ -1,22 +1,19 @@
-import { Action, action, actionOn, ActionOn } from "easy-peasy";
-import { NPolygon, KPolygon, KPoint, PInstance, PMaster } from "../types";
+import { Action, action } from "easy-peasy";
+import { KPolygon, KPoint, PInstance, PMaster } from "../types";
 import { shapes } from "./fixtures";
 import { KGrid } from "../generateGrid";
-import { StoreModel } from ".";
 import * as R from "ramda";
-import {
-  applyToPoint,
-  translate,
-  Matrix,
-  identity,
-} from "transformation-matrix";
+import { translate, identity, rotate, compose } from "transformation-matrix";
 
 export const kGrid = new KGrid({ cols: 12, rows: 10 });
 
 export interface PolygonsModel {
   masters: PMaster[];
   instances: PInstance[];
-  add: Action<PolygonsModel, { parentId: string; pts: [number, number][] }>;
+  add: Action<
+    PolygonsModel,
+    { parentId: string; pts: Point[]; anchorPt: Point }
+  >;
   duplicate: Action<
     PolygonsModel,
     { parentId: string; instanceId: string; newInstanceId: string }
@@ -25,6 +22,7 @@ export interface PolygonsModel {
     PolygonsModel,
     { id: string | null; position: [number, number] }
   >;
+  rotate: Action<PolygonsModel, { id: string }>;
   delete: Action<PolygonsModel, { parentId: string; instanceId: string }>;
   setColor: Action<PolygonsModel, { parentId: string; color: string }>;
 }
@@ -51,12 +49,12 @@ const masters: PMaster[] = (shapes as KPolygon[]).map(
 const polygons: PolygonsModel = {
   masters,
   instances,
-  add: action((state, { parentId, pts }) => {
-    console.log("ADDDING", parentId, pts);
+  add: action((state, { parentId, pts, anchorPt }) => {
+    console.log("ADDDING", parentId, pts, anchorPt);
     const newId = Math.random().toString(36).slice(2);
     const newPolygonMaster: PMaster = {
       color: "red",
-      pts: pts,
+      pts: pts.map(pt => [pt[0] - anchorPt[0], pt[1] - anchorPt[1]),
       id: newId,
       children: [],
     };
@@ -65,6 +63,8 @@ const polygons: PolygonsModel = {
     const newPolygonInstance: PInstance = {
       masterId: newId,
       instanceId: newId,
+      translate: anchorPt,
+      rotate: 0,
       transMat: identity(),
     };
     state.instances.push(newPolygonInstance);
@@ -98,21 +98,36 @@ const polygons: PolygonsModel = {
 
   move: action((state, payload) => {
     const { id, position: pt } = payload;
-    const transMat = translate(pt[0], pt[1]);
+    // const transMat = translate(pt[0], pt[1]);
     state.instances = state.instances.map((instance) => {
       if (
         instance.instanceId === id &&
-        !R.equals(instance.transMat, transMat)
+        !R.equals(instance.translate, pt)
       ) {
         return {
           ...instance,
-          transMat,
+          translate: pt,
         };
       } else {
         return instance;
       }
     });
   }),
+
+  rotate: action((state, payload) => {
+    const { id } = payload;
+    state.instances = state.instances.map((instance) => {
+      if (instance.instanceId === id) {
+        return {
+          ...instance,
+          rotate: instance.rotate + Math.PI / 3,
+        };
+      } else {
+        return instance;
+      }
+    });
+  }),
+
   delete: action((state, payload) => {
     const { parentId, instanceId } = payload;
     state.instances = state.instances.filter(
