@@ -30,13 +30,13 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
 
   const state = useStoreState((state) => state.state);
   const activePolygon = useStoreState((state) => state.activePolygon);
+  const showGrid = useStoreState((state) => state.showGrid);
 
   if (!kGrid) return <div></div>;
   const updateState = useStoreActions((actions) => actions.updateState);
 
   const movePolygon = useStoreActions((actions) => actions.polygons.move);
-
-  console.log(state, activePolygon);
+  const addPolygon = useStoreActions((actions) => actions.polygons.add);
 
   const mouseMove = ({
     clientX: cX,
@@ -45,8 +45,6 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
     clientX: number;
     clientY: number;
   }) => {
-    // updateCursorPosition([cX, cY]);
-
     if (state === "MOVE") {
       const node = svgRef.current;
       if (node) {
@@ -76,41 +74,40 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
       updateState(null);
       // setState(null);
     } else if (state === "NEW") {
-      // const node = svgRef.current;
-      // if (node) {
-      //   const {
-      //     x: rX,
-      //     y: rY,
-      //     width: rW,
-      //     height: rH,
-      //   } = node.getBoundingClientRect();
-      //   const xe = cX - rX - rW / 2;
-      //   const ye = cY - rY - rH / 2;
-      //   const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
-      //   const [x0, y0] = kGrid.pt0ToKPt([x0e, y0e]);
-      //   const [x, y] = applyToPoint(tmat, [x0, y0]);
-      //   console.log(clickedPoints);
-      //   if (clickedPoints.length) {
-      //     const [x0, y0] = clickedPoints[0];
-      //     const d = Math.sqrt(Math.pow(x0 - x, 2) + Math.pow(y0 - y, 2));
-      //     if (d < 3) {
-      //       console.log("Adding");
-      //       const id = Math.random().toString(36).slice(2);
-      //       // const polygon = {
-      //       //   id,
-      //       //   pts: applyToPoints(inverse(tmat), clickedPoints),
-      //       //   color: "green",
-      //       // };
-      //       setState(null);
-      //       setClickedPoints([]);
-      //       addPolygon(shapeId, applyToPoints(inverse(tmat), clickedPoints));
-      //     } else {
-      //       setClickedPoints((pts: any) => [...pts, [x, y]] as any);
-      //     }
-      //   } else {
-      //     setClickedPoints((pts: any) => [...pts, [x, y]] as any);
-      //   }
-      // }
+      const node = svgRef.current;
+      if (node) {
+        const {
+          x: rX,
+          y: rY,
+          width: rW,
+          height: rH,
+        } = node.getBoundingClientRect();
+        const xe = cX - rX - rW / 2;
+        const ye = cY - rY - rH / 2;
+        const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
+        const [x0, y0] = kGrid.pt0ToKPt([x0e, y0e]);
+        const [x, y] = applyToPoint(tmat, [x0, y0]);
+        console.log(clickedPoints);
+        if (clickedPoints.length) {
+          const [x0, y0] = clickedPoints[0];
+          const d = Math.sqrt(Math.pow(x0 - x, 2) + Math.pow(y0 - y, 2));
+          if (d < 3) {
+            console.log("Adding");
+
+            updateState(null);
+            setClickedPoints([]);
+            addPolygon({
+              parentId: shapeId,
+              pts: applyToPoints(inverse(tmat), clickedPoints),
+            });
+            // addPolygon(shapeId, applyToPoints(inverse(tmat), clickedPoints));
+          } else {
+            setClickedPoints((pts: any) => [...pts, [x, y]] as any);
+          }
+        } else {
+          setClickedPoints((pts: any) => [...pts, [x, y]] as any);
+        }
+      }
     }
   };
 
@@ -148,19 +145,21 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
       >
         <g transform={`${toSVG(tmat)}`}>
           {polygon.children.map((id, idx) => (
-            <ClickablePolygon key={id} id={id} />
+            <ClickablePolygon key={id} parentId={shapeId} id={id} />
           ))}
         </g>
 
-        {pts2.map(([x, y], idx) => (
-          <circle
-            key={idx}
-            cx={x}
-            cy={y}
-            r={Math.min(2 * s, 2)}
-            className="text-gray-400 fill-current"
-          />
-        ))}
+        {showGrid &&
+          pts2.map(([x, y], idx) => (
+            <circle
+              key={idx}
+              cx={x}
+              cy={y}
+              r={Math.min(2 * s, 2)}
+              className="text-gray-400 fill-current"
+              pointerEvents="none"
+            />
+          ))}
 
         {clickedPoints.map(([x, y], idx) => (
           <circle key={idx} cx={x} cy={y} r={5} fill="red" />

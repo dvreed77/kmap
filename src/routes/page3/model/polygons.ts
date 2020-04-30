@@ -4,28 +4,29 @@ import { shapes } from "./fixtures";
 import { KGrid } from "../generateGrid";
 import { StoreModel } from ".";
 import * as R from "ramda";
-import { applyToPoint, translate, Matrix } from "transformation-matrix";
+import {
+  applyToPoint,
+  translate,
+  Matrix,
+  identity,
+} from "transformation-matrix";
 
 export const kGrid = new KGrid({ cols: 12, rows: 10 });
-
-function lensMatching(pred: any) {
-  return R.lens(R.find(pred), (newVal: any, array: any[]) => {
-    const index = R.findIndex(pred, array);
-    return R.update(index, newVal, array);
-  });
-}
-
-const lensById = R.compose(lensMatching, R.propEq("id"));
 
 export interface PolygonsModel {
   masters: PMaster[];
   instances: PInstance[];
-  add: Action<PolygonsModel, string>;
+  add: Action<PolygonsModel, { parentId: string; pts: [number, number][] }>;
+  duplicate: Action<
+    PolygonsModel,
+    { parentId: string; instanceId: string; newInstanceId: string }
+  >;
   move: Action<
     PolygonsModel,
     { id: string | null; position: [number, number] }
   >;
-  // onMove: ActionOn<PolygonsModel, StoreModel>;
+  delete: Action<PolygonsModel, { parentId: string; instanceId: string }>;
+  setColor: Action<PolygonsModel, { parentId: string; color: string }>;
 }
 
 const instances: PInstance[] = [];
@@ -50,8 +51,49 @@ const masters: PMaster[] = (shapes as KPolygon[]).map(
 const polygons: PolygonsModel = {
   masters,
   instances,
-  add: action((state, payload) => {
-    // state.polygons.push(payload);
+  add: action((state, { parentId, pts }) => {
+    console.log("ADDDING", parentId, pts);
+    const newId = Math.random().toString(36).slice(2);
+    const newPolygonMaster: PMaster = {
+      color: "red",
+      pts: pts,
+      id: newId,
+      children: [],
+    };
+    state.masters.push(newPolygonMaster);
+
+    const newPolygonInstance: PInstance = {
+      masterId: newId,
+      instanceId: newId,
+      transMat: identity(),
+    };
+    state.instances.push(newPolygonInstance);
+
+    state.masters = state.masters.map((master) => {
+      if (master.id === parentId) {
+        master.children.push(newId);
+      }
+      return master;
+    });
+  }),
+
+  duplicate: action((state, payload) => {
+    const { parentId, instanceId, newInstanceId } = payload;
+    const polygonInstance = state.instances.find(
+      (d) => d.instanceId === instanceId
+    ) as PInstance;
+    const newPolygonInstance: PInstance = {
+      ...polygonInstance,
+      instanceId: newInstanceId,
+    };
+    state.instances.push(newPolygonInstance);
+
+    state.masters = state.masters.map((master) => {
+      if (master.id === parentId) {
+        master.children.push(newInstanceId);
+      }
+      return master;
+    });
   }),
 
   move: action((state, payload) => {
@@ -69,6 +111,29 @@ const polygons: PolygonsModel = {
       } else {
         return instance;
       }
+    });
+  }),
+  delete: action((state, payload) => {
+    const { parentId, instanceId } = payload;
+    state.instances = state.instances.filter(
+      (d) => d.instanceId !== instanceId
+    );
+
+    state.masters = state.masters.map((master) => {
+      if (master.id === parentId) {
+        master.children = master.children.filter((d) => d !== instanceId);
+      }
+      return master;
+    });
+  }),
+  setColor: action((state, payload) => {
+    const { parentId, color } = payload;
+
+    state.masters = state.masters.map((master) => {
+      if (master.id === parentId) {
+        master.color = color;
+      }
+      return master;
     });
   }),
 };

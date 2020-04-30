@@ -3,6 +3,7 @@ import { StoreProvider } from "easy-peasy";
 import store from "./store";
 import { Route, useRouteMatch } from "react-router-dom";
 import { Canvas } from "./Canvas";
+import { Sidebar } from "./Sidebar";
 
 export function Page3() {
   const { path } = useRouteMatch();
@@ -22,12 +23,7 @@ export function Page3() {
           />
         </div>
         <div className="w-2/12 flex items-center justify-center">
-          {/* <Sidebar
-            setState={setState}
-            onSave={onSave}
-            // grid={grid}
-            // setGrid={setGrid}
-          /> */}
+          <Sidebar />
         </div>
       </div>
     </StoreProvider>

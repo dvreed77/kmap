@@ -11,6 +11,8 @@ export interface StoreModel {
   updateState: Action<StoreModel, string | null>;
   activePolygon: string | null;
   updateActivePolygon: Action<StoreModel, string | null>;
+  showGrid: boolean;
+  setShowGrid: Action<StoreModel, boolean>;
 }
 
 const model: StoreModel = {
@@ -26,6 +28,10 @@ const model: StoreModel = {
   updateActivePolygon: action((state, payload) => {
     console.log("SETTING ACTIVE");
     state.activePolygon = payload;
+  }),
+  showGrid: true,
+  setShowGrid: action((state, payload) => {
+    state.showGrid = payload;
   }),
 };
 
