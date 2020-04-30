@@ -4,56 +4,38 @@ import { genPathString } from "../../utils";
 import * as R from "ramda";
 import { Matrix, applyToPoints, compose, toSVG } from "transformation-matrix";
 import { useHistory } from "react-router-dom";
-import { NPolygon } from "./types";
+import { NPolygon, PInstance, PMaster } from "./types";
 import { useStoreState } from "./store";
 
-export const Polygon = React.memo(
-  ({
-    id,
-    shapeId,
-    transMat,
-  }: {
-    id: string;
-    shapeId: string;
-    transMat: any;
-  }) => {
-    const polygon = useStoreState((state) =>
-      state.polygons.polygons.find((d) => d.id === shapeId)
-    ) as NPolygon;
+export const Polygon = React.memo(({ id }: { id: string }) => {
+  const polygonInstance = useStoreState((state) =>
+    state.polygons.instances.find((d) => d.instanceId === id)
+  ) as PInstance;
 
-    const dPath = genPathString(polygon.pts, true);
+  const polygonMaster = useStoreState((state) =>
+    state.polygons.masters.find((d) => d.id === polygonInstance.masterId)
+  ) as PMaster;
 
-    return (
-      <g transform={`${toSVG(transMat)}`}>
-        <path
-          d={dPath}
-          stroke="black"
-          fill={polygon.color}
-          vectorEffect="non-scaling-stroke"
-          fillOpacity={1}
-          strokeWidth={3}
-          strokeLinejoin="round"
-        />
-        {polygon.children.map(
-          (
-            {
-              id: shapeId,
-              transMat,
-            }: {
-              id: string;
-              transMat: any;
-            },
-            idx: number
-          ) => (
-            <Polygon
-              key={`${id}.${idx}`}
-              id={`${id}.${idx}`}
-              shapeId={shapeId}
-              transMat={transMat}
-            />
-          )
-        )}
-      </g>
-    );
-  }
-);
+  // const polygon = useStoreState((state) =>
+  //   state.polygons.polygons.find((d) => d.id === shapeId)
+  // ) as NPolygon;
+
+  const dPath = genPathString(polygonMaster.pts, true);
+
+  return (
+    <g transform={`${toSVG(polygonInstance.transMat)}`}>
+      <path
+        d={dPath}
+        stroke="black"
+        fill={polygonMaster.color}
+        vectorEffect="non-scaling-stroke"
+        fillOpacity={1}
+        strokeWidth={3}
+        strokeLinejoin="round"
+      />
+      {polygonMaster.children.map((id: string) => (
+        <Polygon key={id} id={id} />
+      ))}
+    </g>
+  );
+});
