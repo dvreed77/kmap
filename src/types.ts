@@ -6,6 +6,8 @@ export interface PolygonRef {
   transMat: Matrix;
 }
 
+export type Point = [number, number];
+
 export type KPoint = [number, number, number, number];
 
 export type NPolygon = {
@@ -14,6 +16,21 @@ export type NPolygon = {
   pts: [number, number][];
   children: PolygonRef[];
 };
+
+export interface PInstance {
+  instanceId: string;
+  masterId: string;
+  translate: Point;
+  rotate: number;
+  transMat: Matrix;
+}
+
+export interface PMaster {
+  color: string;
+  id: string;
+  pts: [number, number][];
+  children: string[];
+}
 
 export type KPolygon = {
   id: string;

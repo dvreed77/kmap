@@ -1,5 +1,5 @@
 import * as React from "react";
-import { genPathString, getBounds } from "../../utils";
+import { genPathString, getBounds } from "./utils";
 import {
   scale,
   applyToPoints,
@@ -10,15 +10,15 @@ import {
   translate,
 } from "transformation-matrix";
 import { useStoreState, useStoreActions } from "./store";
-import { ClickablePolygon } from "./ClickablePolygon";
-import { NPolygon, PMaster } from "./types";
+import { ClickablePolygon } from "./components/ClickablePolygon";
+import { PMaster } from "./types";
 
 interface ICanvas {
-  width: number;
+  height: number;
   shapeId: string;
 }
 
-export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
+export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [clickedPoints, setClickedPoints] = React.useState([]);
 
@@ -27,8 +27,6 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
   const polygon = useStoreState((state) =>
     state.polygons.masters.find((d) => d.id === shapeId)
   ) as PMaster;
-
-  console.log(polygon);
 
   const state = useStoreState((state) => state.state);
   const activePolygon = useStoreState((state) => state.activePolygon);
@@ -89,7 +87,6 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
         const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
         const [x0, y0] = kGrid.pt0ToKPt([x0e, y0e]);
         const [x, y] = applyToPoint(tmat, [x0, y0]);
-        console.log(clickedPoints);
         if (clickedPoints.length) {
           const [x0, y0] = clickedPoints[0];
           const d = Math.sqrt(Math.pow(x0 - x, 2) + Math.pow(y0 - y, 2));
@@ -125,17 +122,15 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
 
   const { width: bWidth, height: bHeight, center } = getBounds(polygon.pts);
 
-  const padding = 10;
+  const padding = 40;
   const { width: gridWidth, height: gridHeight, pts } = kGrid;
 
-  const s = width / bWidth;
-  const height = s * bHeight;
+  const s = height / bHeight;
+  const width = s * bWidth;
 
   const tmat = compose(scale(s), translate(-center[0], -center[1]));
   const pts2 = applyToPoints(tmat, pts);
   const bounds2 = applyToPoints(tmat, polygon.pts) as [number, number][];
-
-  console.log(bWidth, bHeight, toSVG(tmat));
 
   const dPath = genPathString(bounds2, true);
 
@@ -152,38 +147,64 @@ export const Canvas = React.memo(({ width, shapeId }: ICanvas) => {
         <clipPath id="clipPath">
           <path d={dPath} />
         </clipPath>
+        <filter id="dropshadow" x="-10" y="-10" width="200" height="200">
+          {" "}
+          <feOffset result="offOut" in="SourceAlpha" dx="0" dy="0" />{" "}
+          <feColorMatrix
+            result="matrixOut"
+            in="offOut"
+            type="matrix"
+            values=" 0.49 0 0 0 0 0 0.49 0 0 0 0 0 0.49 0 0 0 0 0 0.16 0"
+          />{" "}
+          <feGaussianBlur result="blurOut" in="matrixOut" stdDeviation="5" />{" "}
+          <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />{" "}
+        </filter>
       </defs>
+
       <g
         transform={`translate(${padding + width / 2}, ${padding + height / 2})`}
-        clipPath="url(#clipPath)"
       >
-        <g transform={`${toSVG(tmat)}`}>
-          {polygon.children.map((id, idx) => (
-            <ClickablePolygon key={id} parentId={shapeId} id={id} />
-          ))}
-        </g>
-
-        {showGrid &&
-          pts2.map(([x, y], idx) => (
-            <circle
-              key={idx}
-              cx={x}
-              cy={y}
-              r={Math.min(2 * s, 2)}
-              className="text-gray-400 fill-current"
-              pointerEvents="none"
-            />
-          ))}
-
-        {clickedPoints.map(([x, y], idx) => (
-          <circle key={idx} cx={x} cy={y} r={5} fill="red" />
-        ))}
-
         <path
           d={dPath}
-          className="text-gray-300 stroke-current stroke-2"
-          fill="none"
+          className="text-gray-500 stroke-current"
+          strokeWidth="0"
+          fill="white"
+          style={{ filter: "url(#dropshadow)" }}
         />
+        <g clipPath="url(#clipPath)">
+          <g transform={`${toSVG(tmat)}`}>
+            {polygon.children.map((id, idx) => (
+              <ClickablePolygon key={id} parentId={shapeId} id={id} />
+            ))}
+          </g>
+
+          <g>
+            {showGrid &&
+              pts2.map(([x, y], idx) => (
+                <circle
+                  key={idx}
+                  cx={x}
+                  cy={y}
+                  r={Math.min(2 * s, 2)}
+                  className="text-gray-400 fill-current"
+                  pointerEvents="none"
+                />
+              ))}
+          </g>
+
+          <g>
+            {clickedPoints.map(([x, y], idx) => (
+              <circle key={idx} cx={x} cy={y} r={5} fill="red" />
+            ))}
+          </g>
+
+          {/* <path
+            d={dPath}
+            className="text-gray-500 stroke-current"
+            strokeWidth="3"
+            fill="none"
+          /> */}
+        </g>
       </g>
     </svg>
   );

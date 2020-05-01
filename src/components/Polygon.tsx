@@ -1,11 +1,18 @@
 import * as React from "react";
 import { Menu, Dropdown } from "antd";
-import { genPathString } from "../../utils";
+import { genPathString } from "../utils";
 import * as R from "ramda";
-import { Matrix, applyToPoints, compose, toSVG } from "transformation-matrix";
+import {
+  Matrix,
+  applyToPoints,
+  compose,
+  toSVG,
+  translate,
+  rotate,
+} from "transformation-matrix";
 import { useHistory } from "react-router-dom";
-import { NPolygon, PInstance, PMaster } from "./types";
-import { useStoreState } from "./store";
+import { NPolygon, PInstance, PMaster } from "../types";
+import { useStoreState } from "../store";
 
 export const Polygon = React.memo(({ id }: { id: string }) => {
   const polygonInstance = useStoreState((state) =>
@@ -23,7 +30,14 @@ export const Polygon = React.memo(({ id }: { id: string }) => {
   const dPath = genPathString(polygonMaster.pts, true);
 
   return (
-    <g transform={`${toSVG(polygonInstance.transMat)}`}>
+    <g
+      transform={toSVG(
+        compose(
+          translate(...polygonInstance.translate),
+          rotate(polygonInstance.rotate)
+        )
+      )}
+    >
       <path
         d={dPath}
         stroke="black"

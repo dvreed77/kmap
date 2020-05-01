@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Menu, Dropdown } from "antd";
-import { genPathString } from "../../utils";
+import { genPathString } from "../utils";
 import * as R from "ramda";
 import {
   Matrix,
@@ -11,10 +11,10 @@ import {
   rotate,
 } from "transformation-matrix";
 import { useHistory } from "react-router-dom";
-import { NPolygon, PInstance, PMaster } from "./types";
-import { useStoreState, useStoreActions } from "./store";
+import { NPolygon, PInstance, PMaster } from "../types";
+import { useStoreState, useStoreActions } from "../store";
 import { Polygon } from "./Polygon";
-import { colors } from "../../utils/colors";
+import { colors } from "../utils/colors";
 
 export const ClickablePolygon = React.memo(
   ({ parentId, id }: { parentId: string; id: string }) => {
@@ -22,11 +22,11 @@ export const ClickablePolygon = React.memo(
       state.polygons.instances.find((d) => d.instanceId === id)
     ) as PInstance;
 
-    console.log(polygonInstance);
-
     const polygonMaster = useStoreState((state) =>
       state.polygons.masters.find((d) => d.id === polygonInstance.masterId)
     ) as PMaster;
+
+    console.log(polygonMaster, polygonInstance);
 
     const history = useHistory();
     const dPath = genPathString(polygonMaster.pts, true);
@@ -112,7 +112,7 @@ export const ClickablePolygon = React.memo(
           key="enter"
           onClick={() => {
             console.log("enter");
-            history.push(`/page3/${polygonInstance.masterId}`);
+            history.push(`/${polygonInstance.masterId}`);
           }}
         >
           enter

@@ -17,7 +17,6 @@ export const genPathString = (pts: [number, number][], closed = true) => {
 };
 
 export const getBounds = (pts: [number, number][]) => {
-  console.log(pts);
   const minX = pts.reduce((a, b) => (a < b[0] ? a : b[0]), Infinity);
   const minY = pts.reduce((a, b) => (a < b[1] ? a : b[1]), Infinity);
 
@@ -30,8 +29,6 @@ export const getBounds = (pts: [number, number][]) => {
     [maxX, maxY],
     [minX, maxY],
   ];
-
-  console.log(minX, maxX, minY, maxY);
 
   const width = maxX - minX;
   const height = maxY - minY;

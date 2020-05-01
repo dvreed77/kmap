@@ -1,11 +1,19 @@
 import { Action, action } from "easy-peasy";
-import { KPolygon, KPoint, PInstance, PMaster } from "../types";
+import { KPolygon, KPoint, PInstance, PMaster, Point } from "../types";
 import { shapes } from "./fixtures";
 import { KGrid } from "../generateGrid";
 import * as R from "ramda";
 import { translate, identity, rotate, compose } from "transformation-matrix";
 
 export const kGrid = new KGrid({ cols: 12, rows: 10 });
+
+const x0 = -kGrid.width / 2;
+const x1 = kGrid.width / 2;
+
+const y0 = -kGrid.height / 2;
+const y1 = kGrid.height / 2;
+
+console.log([x0, y0], kGrid.pt0ToKPt([x0, y0]));
 
 export interface PolygonsModel {
   masters: PMaster[];
@@ -27,34 +35,33 @@ export interface PolygonsModel {
   setColor: Action<PolygonsModel, { parentId: string; color: string }>;
 }
 
-const instances: PInstance[] = [];
-
-const masters: PMaster[] = (shapes as KPolygon[]).map(
-  ({ id, color, kPts, children }: KPolygon) => ({
-    id,
-    color,
-    pts: kPts.map((pt: KPoint) => kGrid.kPtToPt0(pt)),
-    children: children.map((child, idx) => {
-      const instanceId = `${id}.${idx}`;
-      instances.push({
-        instanceId,
-        masterId: child.id,
-        transMat: child.transMat,
-      });
-      return instanceId;
-    }),
-  })
-);
-
 const polygons: PolygonsModel = {
-  masters,
-  instances,
+  masters: [
+    {
+      id: "shapeB",
+      color: "green",
+      // pts: [
+      //   [2, 4, -2, 0],
+      //   [-4, -2, -2, 0],
+      //   [-2, -4, 2, 0],
+      //   [4, 2, 2, 0],
+      // ].map((pt) => kGrid.kPtToPt0(pt)),
+      pts: [
+        [x0, y0],
+        [x1, y0],
+        [x1, y1],
+        [x0, y1],
+      ],
+      children: [],
+    },
+  ],
+  instances: [],
   add: action((state, { parentId, pts, anchorPt }) => {
     console.log("ADDDING", parentId, pts, anchorPt);
     const newId = Math.random().toString(36).slice(2);
     const newPolygonMaster: PMaster = {
       color: "red",
-      pts: pts.map(pt => [pt[0] - anchorPt[0], pt[1] - anchorPt[1]),
+      pts: pts.map((pt) => [pt[0] - anchorPt[0], pt[1] - anchorPt[1]]),
       id: newId,
       children: [],
     };
@@ -100,10 +107,7 @@ const polygons: PolygonsModel = {
     const { id, position: pt } = payload;
     // const transMat = translate(pt[0], pt[1]);
     state.instances = state.instances.map((instance) => {
-      if (
-        instance.instanceId === id &&
-        !R.equals(instance.translate, pt)
-      ) {
+      if (instance.instanceId === id && !R.equals(instance.translate, pt)) {
         return {
           ...instance,
           translate: pt,

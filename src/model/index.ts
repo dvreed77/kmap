@@ -21,21 +21,16 @@ const model: StoreModel = {
   cursor,
   state: null,
   updateState: action((state, payload) => {
-    console.log("SETTING STATE");
     state.state = payload;
   }),
   activePolygon: null,
   updateActivePolygon: action((state, payload) => {
-    console.log("SETTING ACTIVE");
     state.activePolygon = payload;
   }),
   showGrid: true,
   setShowGrid: action((state, payload) => {
     state.showGrid = payload;
   }),
-  // save: action((state, payload) => {
-
-  // })
 };
 
 export default model;
