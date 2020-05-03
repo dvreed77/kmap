@@ -1,18 +1,9 @@
 import * as React from "react";
-import { Menu, Dropdown } from "antd";
 import { genPathString } from "../utils";
-import * as R from "ramda";
-import {
-  Matrix,
-  applyToPoints,
-  compose,
-  toSVG,
-  translate,
-  rotate,
-} from "transformation-matrix";
-import { useHistory } from "react-router-dom";
-import { NPolygon, PInstance, PMaster } from "../types";
+import { compose, toSVG, translate, rotate } from "transformation-matrix";
+import { PInstance, PMaster } from "../types";
 import { useStoreState } from "../store";
+import { genHatchLines } from "../utils/hatchfill/genHatchLines";
 
 export const Polygon = React.memo(({ id }: { id: string }) => {
   const polygonInstance = useStoreState((state) =>
@@ -23,29 +14,51 @@ export const Polygon = React.memo(({ id }: { id: string }) => {
     state.polygons.masters.find((d) => d.id === polygonInstance.masterId)
   ) as PMaster;
 
-  // const polygon = useStoreState((state) =>
-  //   state.polygons.polygons.find((d) => d.id === shapeId)
-  // ) as NPolygon;
-
   const dPath = genPathString(polygonMaster.pts, true);
+
+  const hatchlines = genHatchLines(
+    polygonMaster.pts,
+    2 * Math.PI * Math.random(),
+    1
+  );
+
+  // console.log(hatchlines);
+
+  const [rx, ry] = polygonInstance.rotationAnchor
+    ? polygonInstance.rotationAnchor
+    : [0, 0];
 
   return (
     <g
       transform={toSVG(
         compose(
-          translate(...polygonInstance.translate),
-          rotate(polygonInstance.rotate)
+          rotate(polygonInstance.rotate, rx, ry),
+          translate(...polygonInstance.translate)
         )
       )}
     >
+      {/* {hatchlines.map(([pt0, pt1], idx) => (
+        <line
+          key={idx}
+          x1={pt0[0]}
+          y1={pt0[1]}
+          x2={pt1[0]}
+          y2={pt1[1]}
+          stroke={polygonMaster.color}
+          vectorEffect="non-scaling-stroke"
+          pointerEvents="none"
+        />
+      ))} */}
       <path
         d={dPath}
         stroke="black"
         fill={polygonMaster.color}
+        // fill={"none"}
         vectorEffect="non-scaling-stroke"
         fillOpacity={1}
         strokeWidth={3}
         strokeLinejoin="round"
+        pointerEvents="none"
       />
       {polygonMaster.children.map((id: string) => (
         <Polygon key={id} id={id} />

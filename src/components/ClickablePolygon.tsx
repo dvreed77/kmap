@@ -2,16 +2,9 @@ import * as React from "react";
 import { Menu, Dropdown } from "antd";
 import { genPathString } from "../utils";
 import * as R from "ramda";
-import {
-  Matrix,
-  applyToPoints,
-  compose,
-  toSVG,
-  translate,
-  rotate,
-} from "transformation-matrix";
+import { compose, toSVG, translate, rotate } from "transformation-matrix";
 import { useHistory } from "react-router-dom";
-import { NPolygon, PInstance, PMaster } from "../types";
+import { PInstance, PMaster } from "../types";
 import { useStoreState, useStoreActions } from "../store";
 import { Polygon } from "./Polygon";
 import { colors } from "../utils/colors";
@@ -26,7 +19,9 @@ export const ClickablePolygon = React.memo(
       state.polygons.masters.find((d) => d.id === polygonInstance.masterId)
     ) as PMaster;
 
-    console.log(polygonMaster, polygonInstance);
+    const activePolygon = useStoreState((state) => state.activePolygon);
+
+    // console.log(polygonMaster, polygonInstance);
 
     const history = useHistory();
     const dPath = genPathString(polygonMaster.pts, true);
@@ -39,6 +34,10 @@ export const ClickablePolygon = React.memo(
 
     const duplicatePolygon = useStoreActions(
       (actions) => actions.polygons.duplicate
+    );
+
+    const rotateAndCopyPolygon = useStoreActions(
+      (actions) => actions.polygons.rotateAndCopy
     );
 
     const rotatePolygon = useStoreActions((actions) => actions.polygons.rotate);
@@ -60,6 +59,18 @@ export const ClickablePolygon = React.memo(
           }}
         >
           move
+        </Menu.Item>
+        <Menu.Item
+          key="anchor"
+          onClick={() => {
+            console.log("set anchor");
+            updateState("SET_ANCHOR");
+            updateActivePolygon(id);
+            // setState("MOVE");
+            // setActive(id);
+          }}
+        >
+          set anchor
         </Menu.Item>
         <Menu.Item
           key="duplicate"
@@ -109,6 +120,19 @@ export const ClickablePolygon = React.memo(
           rotate
         </Menu.Item>
         <Menu.Item
+          key="rotateAndCopy"
+          onClick={() => {
+            const newInstanceId = Math.random().toString(36).slice(2);
+            rotateAndCopyPolygon({
+              parentId,
+              instanceId: id,
+              newInstanceId,
+            });
+          }}
+        >
+          rotateAndCopy
+        </Menu.Item>
+        <Menu.Item
           key="enter"
           onClick={() => {
             console.log("enter");
@@ -120,28 +144,43 @@ export const ClickablePolygon = React.memo(
       </Menu>
     );
 
+    const [rx, ry] = polygonInstance.rotationAnchor
+      ? polygonInstance.rotationAnchor
+      : [0, 0];
     return (
       <Dropdown overlay={menu} trigger={["contextMenu"]}>
-        <g
-          transform={toSVG(
-            compose(
-              translate(...polygonInstance.translate),
-              rotate(polygonInstance.rotate)
-            )
+        <g>
+          <g
+            transform={toSVG(
+              compose(
+                rotate(polygonInstance.rotate, rx, ry),
+                translate(...polygonInstance.translate)
+              )
+            )}
+          >
+            <path
+              d={dPath}
+              stroke="black"
+              fill={polygonMaster.color}
+              // fill="white"
+              vectorEffect="non-scaling-stroke"
+              fillOpacity={1}
+              strokeWidth={3}
+              strokeLinejoin="round"
+              onDoubleClick={() => updateActivePolygon(id)}
+            />
+            {polygonMaster.children.map((id: string) => (
+              <Polygon key={id} id={id} />
+            ))}
+          </g>
+          {activePolygon === id && polygonInstance.rotationAnchor && (
+            <circle
+              cx={polygonInstance.rotationAnchor[0]}
+              cy={polygonInstance.rotationAnchor[1]}
+              r={3}
+              fill="blue"
+            />
           )}
-        >
-          <path
-            d={dPath}
-            stroke="black"
-            fill={polygonMaster.color}
-            vectorEffect="non-scaling-stroke"
-            fillOpacity={1}
-            strokeWidth={3}
-            strokeLinejoin="round"
-          />
-          {polygonMaster.children.map((id: string) => (
-            <Polygon key={id} id={id} />
-          ))}
         </g>
       </Dropdown>
     );

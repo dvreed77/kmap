@@ -1,28 +1,16 @@
 import { KGrid } from "./generateGrid";
 import { Matrix } from "transformation-matrix";
 
-export interface PolygonRef {
-  id: string;
-  transMat: Matrix;
-}
-
 export type Point = [number, number];
-
+export type Line = [Point, Point];
 export type KPoint = [number, number, number, number];
-
-export type NPolygon = {
-  id: string;
-  color: string;
-  pts: [number, number][];
-  children: PolygonRef[];
-};
 
 export interface PInstance {
   instanceId: string;
   masterId: string;
   translate: Point;
   rotate: number;
-  transMat: Matrix;
+  rotationAnchor: Point;
 }
 
 export interface PMaster {
@@ -31,13 +19,6 @@ export interface PMaster {
   pts: [number, number][];
   children: string[];
 }
-
-export type KPolygon = {
-  id: string;
-  color: string;
-  kPts: [number, number, number, number][];
-  children: PolygonRef[];
-};
 
 export interface IAppContext {
   kGrid: KGrid;

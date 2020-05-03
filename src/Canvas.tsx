@@ -8,6 +8,7 @@ import {
   toSVG,
   compose,
   translate,
+  rotate,
 } from "transformation-matrix";
 import { useStoreState, useStoreActions } from "./store";
 import { ClickablePolygon } from "./components/ClickablePolygon";
@@ -32,8 +33,15 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
   const activePolygon = useStoreState((state) => state.activePolygon);
   const showGrid = useStoreState((state) => state.showGrid);
 
+  const activeInstance = useStoreState((state) =>
+    state.polygons.instances.find((d) => d.instanceId)
+  );
+
   if (!kGrid) return <div></div>;
   const updateState = useStoreActions((actions) => actions.updateState);
+  const updateActivePolygon = useStoreActions(
+    (actions) => actions.updateActivePolygon
+  );
 
   const movePolygon = useStoreActions((actions) => actions.polygons.move);
   const addPolygon = useStoreActions((actions) => actions.polygons.add);
@@ -58,10 +66,20 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
         const ye = cY - rY - rH / 2;
         const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
         const [x0, y0] = kGrid.pt0ToKPtCenter([x0e, y0e]);
-        movePolygon({ id: activePolygon, position: [x0, y0] });
+
+        if (activeInstance) {
+          movePolygon({
+            id: activePolygon,
+            position: [x0, y0],
+          });
+        }
       }
     }
   };
+
+  const setRotationAnchor = useStoreActions(
+    (actions) => actions.polygons.setRotationAnchor
+  );
 
   const onMouseClick = ({
     clientX: cX,
@@ -72,7 +90,28 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
   }) => {
     if (state === "MOVE") {
       updateState(null);
-      // setState(null);
+      updateActivePolygon(null);
+    } else if (state === "SET_ANCHOR") {
+      const node = svgRef.current;
+      if (node) {
+        const {
+          x: rX,
+          y: rY,
+          width: rW,
+          height: rH,
+        } = node.getBoundingClientRect();
+        const xe = cX - rX - rW / 2;
+        const ye = cY - rY - rH / 2;
+        const [x0e, y0e] = applyToPoint(inverse(tmat), [xe, ye]);
+        const [x0, y0] = kGrid.pt0ToKPt([x0e, y0e]);
+        const [x, y] = applyToPoint(tmat, [x0, y0]);
+
+        setRotationAnchor({
+          instanceId: activePolygon as string,
+          anchorPt: [x0, y0],
+        });
+        updateState(null);
+      }
     } else if (state === "NEW") {
       const node = svgRef.current;
       if (node) {
@@ -133,6 +172,7 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
   const bounds2 = applyToPoints(tmat, polygon.pts) as [number, number][];
 
   const dPath = genPathString(bounds2, true);
+  const dPath2 = genPathString(polygon.pts, true);
 
   return (
     <svg
@@ -148,16 +188,15 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
           <path d={dPath} />
         </clipPath>
         <filter id="dropshadow" x="-10" y="-10" width="200" height="200">
-          {" "}
-          <feOffset result="offOut" in="SourceAlpha" dx="0" dy="0" />{" "}
+          <feOffset result="offOut" in="SourceAlpha" dx="0" dy="0" />
           <feColorMatrix
             result="matrixOut"
             in="offOut"
             type="matrix"
             values=" 0.49 0 0 0 0 0 0.49 0 0 0 0 0 0.49 0 0 0 0 0 0.16 0"
-          />{" "}
-          <feGaussianBlur result="blurOut" in="matrixOut" stdDeviation="5" />{" "}
-          <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />{" "}
+          />
+          <feGaussianBlur result="blurOut" in="matrixOut" stdDeviation="5" />
+          <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
         </filter>
       </defs>
 
@@ -173,9 +212,27 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
         />
         <g clipPath="url(#clipPath)">
           <g transform={`${toSVG(tmat)}`}>
-            {polygon.children.map((id, idx) => (
-              <ClickablePolygon key={id} parentId={shapeId} id={id} />
-            ))}
+            {polygon.children
+              .filter((d) => d !== activePolygon)
+              .map((id, idx) => (
+                <ClickablePolygon key={id} parentId={shapeId} id={id} />
+              ))}
+            {activePolygon && (
+              <g>
+                <path
+                  d={dPath2}
+                  className="text-gray-500 stroke-current"
+                  strokeWidth="0"
+                  fill="white"
+                  fillOpacity="0.8"
+                  onClick={() => updateActivePolygon(null)}
+                />
+                <ClickablePolygon
+                  parentId={shapeId}
+                  id={activePolygon as string}
+                />
+              </g>
+            )}
           </g>
 
           <g>
