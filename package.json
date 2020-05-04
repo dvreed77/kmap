@@ -1,6 +1,8 @@
 {
-  "name": "empty-project",
+  "name": "hex-map",
   "version": "1.0.0",
+  "private": true,
+  "homepage": "http://dvreed77.github.io/kmap",
   "description": "",
   "main": "index.js",
   "keywords": [],
@@ -9,8 +11,11 @@
   "scripts": {
     "clean": "rm dist/bundle.js",
     "start": "npm run watch:css & parcel src/index.html",
-    "build-prod": "parcel build src/index.html",
-    "watch:css": "postcss tailwind.css -o src/index.css -w"
+    "build": "npm run build:css && npm run build-prod",
+    "build-prod": "parcel build src/index.html --public-url /kmap/",
+    "deploy": "gh-pages -d dist",
+    "watch:css": "postcss tailwind.css -o src/index.css -w",
+    "build:css": "postcss tailwind.css -o src/index.css"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.28",
@@ -44,6 +49,7 @@
     "@types/react-redux": "^7.1.7",
     "@types/react-router-dom": "^5.1.4",
     "autoprefixer": "^9.7.6",
+    "gh-pages": "^2.2.0",
     "parcel-bundler": "latest",
     "postcss-cli": "^7.1.0",
     "postcss-modules": "^2.0.0",

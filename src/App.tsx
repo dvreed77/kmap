@@ -9,7 +9,7 @@ import store from "./store";
 
 function App() {
   return (
-    <Router>
+    <Router basename="/kmap">
       <Header />
       <div className="w-10/12 mx-auto flex flex-row">
         <StoreProvider store={store}>

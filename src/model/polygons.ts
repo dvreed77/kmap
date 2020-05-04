@@ -15,6 +15,7 @@ const y1 = kGrid.height / 2;
 export interface PolygonsModel {
   masters: PMaster[];
   instances: PInstance[];
+  clear: Action<PolygonsModel>;
   add: Action<
     PolygonsModel,
     { parentId: string; pts: Point[]; anchorPt: Point }
@@ -55,6 +56,22 @@ const polygons: PolygonsModel = {
     },
   ],
   instances: [],
+  clear: action((state) => {
+    state.masters = [
+      {
+        id: "shapeB",
+        color: "green",
+        pts: [
+          [x0, y0],
+          [x1, y0],
+          [x1, y1],
+          [x0, y1],
+        ],
+        children: [],
+      },
+    ];
+    state.instances = [];
+  }),
   add: action((state, { parentId, pts, anchorPt }) => {
     console.log("ADDDING", parentId, pts, anchorPt);
     const newId = Math.random().toString(36).slice(2);

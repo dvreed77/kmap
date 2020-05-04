@@ -23,6 +23,7 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [clickedPoints, setClickedPoints] = React.useState([]);
 
+  console.log(shapeId);
   const kGrid = useStoreState((state) => state.kGrid);
 
   const polygon = useStoreState((state) =>
@@ -168,11 +169,14 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
   const width = s * bWidth;
 
   const tmat = compose(scale(s), translate(-center[0], -center[1]));
+  const tmat3 = compose(scale(s * 0.95), translate(-center[0], -center[1]));
   const pts2 = applyToPoints(tmat, pts);
   const bounds2 = applyToPoints(tmat, polygon.pts) as [number, number][];
+  const bounds3 = applyToPoints(tmat3, polygon.pts) as [number, number][];
 
   const dPath = genPathString(bounds2, true);
   const dPath2 = genPathString(polygon.pts, true);
+  const dPath3 = genPathString(bounds3, true);
 
   return (
     <svg
@@ -214,7 +218,7 @@ export const Canvas = React.memo(({ height, shapeId }: ICanvas) => {
           <g transform={`${toSVG(tmat)}`}>
             {polygon.children
               .filter((d) => d !== activePolygon)
-              .map((id, idx) => (
+              .map((id) => (
                 <ClickablePolygon key={id} parentId={shapeId} id={id} />
               ))}
             {activePolygon && (
